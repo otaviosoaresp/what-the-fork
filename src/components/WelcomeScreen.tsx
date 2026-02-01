@@ -50,15 +50,19 @@ export function WelcomeScreen() {
               Recent Repositories
             </h2>
             <div className="space-y-1">
-              {recentRepositories.map(path => (
-                <button
-                  key={path}
-                  onClick={() => handleOpenRecent(path)}
-                  className="w-full text-left px-3 py-2 rounded-md text-sm hover:bg-muted transition-colors truncate"
-                >
-                  {path}
-                </button>
-              ))}
+              {recentRepositories.map(path => {
+                const repoName = path.split('/').pop() ?? path
+                return (
+                  <button
+                    key={path}
+                    onClick={() => handleOpenRecent(path)}
+                    className="w-full text-left px-3 py-2 rounded-md hover:bg-muted transition-colors group"
+                  >
+                    <div className="font-medium text-sm">{repoName}</div>
+                    <div className="text-xs text-muted-foreground truncate">{path}</div>
+                  </button>
+                )
+              })}
             </div>
           </div>
         )}

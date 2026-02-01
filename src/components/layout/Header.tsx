@@ -13,9 +13,12 @@ export function Header() {
   const [isPulling, setIsPulling] = useState(false)
   const [isPushing, setIsPushing] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
-  const { repoName, remoteStatus, repoPath } = useRepositoryStore()
+  const [showRepoMenu, setShowRepoMenu] = useState(false)
+  const { repoName, remoteStatus, repoPath, loadRepository } = useRepositoryStore()
   const addToast = useToastStore((s) => s.addToast)
-  const { diffViewMode, setDiffViewMode } = useUIStore()
+  const { diffViewMode, setDiffViewMode, recentRepositories, addRecentRepository } = useUIStore()
+
+  const otherRepos = recentRepositories.filter(p => p !== repoPath)
 
   const handleFetch = async () => {
     if (!repoPath || isFetching) return
@@ -65,8 +68,16 @@ export function Header() {
   const handleOpenRepo = async () => {
     const path = await window.electron.openDirectory()
     if (path) {
-      await useRepositoryStore.getState().loadRepository(path)
+      await loadRepository(path)
+      addRecentRepository(path)
     }
+    setShowRepoMenu(false)
+  }
+
+  const handleSwitchRepo = async (path: string) => {
+    await loadRepository(path)
+    addRecentRepository(path)
+    setShowRepoMenu(false)
   }
 
   const handleRefresh = async () => {
@@ -85,12 +96,58 @@ export function Header() {
 
   return (
     <header className="h-12 flex items-center justify-between px-4 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex items-center gap-2">
-        <svg className="w-5 h-5 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <circle cx="12" cy="12" r="3" />
-          <path d="M12 3v6M12 15v6M3 12h6M15 12h6" />
-        </svg>
-        <span className="font-semibold text-sm">{repoName}</span>
+      <div className="relative flex items-center gap-2">
+        <button
+          onClick={() => setShowRepoMenu(!showRepoMenu)}
+          className="flex items-center gap-2 px-2 py-1 -mx-2 rounded hover:bg-muted transition-colors"
+        >
+          <svg className="w-5 h-5 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M12 3v6M12 15v6M3 12h6M15 12h6" />
+          </svg>
+          <span className="font-semibold text-sm">{repoName}</span>
+          <svg className="w-3 h-3 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M6 9l6 6 6-6" />
+          </svg>
+        </button>
+
+        {showRepoMenu && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setShowRepoMenu(false)} />
+            <div className="absolute top-full left-0 mt-1 w-72 bg-background border border-border rounded-lg shadow-lg z-50 py-1">
+              {otherRepos.length > 0 && (
+                <>
+                  <div className="px-3 py-1.5 text-xs font-medium text-muted-foreground uppercase">
+                    Recent
+                  </div>
+                  {otherRepos.map(path => {
+                    const name = path.split('/').pop() ?? path
+                    return (
+                      <button
+                        key={path}
+                        onClick={() => handleSwitchRepo(path)}
+                        className="w-full text-left px-3 py-2 hover:bg-muted transition-colors"
+                      >
+                        <div className="text-sm font-medium">{name}</div>
+                        <div className="text-xs text-muted-foreground truncate">{path}</div>
+                      </button>
+                    )
+                  })}
+                  <div className="border-t border-border my-1" />
+                </>
+              )}
+              <button
+                onClick={handleOpenRepo}
+                className="w-full text-left px-3 py-2 hover:bg-muted transition-colors flex items-center gap-2 text-sm"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                </svg>
+                Open Repository...
+              </button>
+            </div>
+          </>
+        )}
       </div>
 
       <div className="flex items-center gap-2">
