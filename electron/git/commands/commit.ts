@@ -1,0 +1,26 @@
+import { executeGit } from '../executor'
+import { parseLog } from '../parser'
+import type { Commit } from '../types'
+
+export async function createCommit(repoPath: string, message: string): Promise<void> {
+  const result = await executeGit(repoPath, ['commit', '-m', message])
+  if (result.exitCode !== 0) throw new Error(result.stderr)
+}
+
+export async function getLog(repoPath: string, count: number = 50): Promise<Commit[]> {
+  const format = '%H|%s|%an|%ad'
+  const result = await executeGit(repoPath, [
+    'log',
+    `--format=${format}`,
+    '--date=short',
+    `-n${count}`
+  ])
+  if (result.exitCode !== 0) throw new Error(result.stderr)
+  return parseLog(result.stdout)
+}
+
+export async function getCommitDiff(repoPath: string, commitHash: string): Promise<string> {
+  const result = await executeGit(repoPath, ['show', commitHash, '--format='])
+  if (result.exitCode !== 0) throw new Error(result.stderr)
+  return result.stdout
+}
