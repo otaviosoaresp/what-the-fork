@@ -9,24 +9,31 @@ import { Settings } from 'lucide-react'
 
 export function Header() {
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [isFetching, setIsFetching] = useState(false)
+  const [isPulling, setIsPulling] = useState(false)
+  const [isPushing, setIsPushing] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const { repoName, remoteStatus, repoPath } = useRepositoryStore()
   const addToast = useToastStore((s) => s.addToast)
   const { diffViewMode, setDiffViewMode } = useUIStore()
 
   const handleFetch = async () => {
-    if (!repoPath) return
+    if (!repoPath || isFetching) return
+    setIsFetching(true)
     try {
       await window.electron.git.fetch(repoPath)
       await useRepositoryStore.getState().refreshRemoteStatus()
       addToast('Fetch completed', 'success')
     } catch (error) {
       addToast(error instanceof Error ? error.message : 'Fetch failed', 'error')
+    } finally {
+      setIsFetching(false)
     }
   }
 
   const handlePull = async () => {
-    if (!repoPath) return
+    if (!repoPath || isPulling) return
+    setIsPulling(true)
     try {
       await window.electron.git.pull(repoPath)
       await useRepositoryStore.getState().refreshStatus()
@@ -34,17 +41,22 @@ export function Header() {
       addToast('Pull completed', 'success')
     } catch (error) {
       addToast(error instanceof Error ? error.message : 'Pull failed', 'error')
+    } finally {
+      setIsPulling(false)
     }
   }
 
   const handlePush = async () => {
-    if (!repoPath) return
+    if (!repoPath || isPushing) return
+    setIsPushing(true)
     try {
       await window.electron.git.push(repoPath)
       await useRepositoryStore.getState().refreshRemoteStatus()
       addToast('Push completed', 'success')
     } catch (error) {
       addToast(error instanceof Error ? error.message : 'Push failed', 'error')
+    } finally {
+      setIsPushing(false)
     }
   }
 
@@ -123,20 +135,33 @@ export function Header() {
 
         <div className="w-px h-6 bg-border" />
 
-        <button onClick={handleFetch} className="btn btn-ghost btn-icon" title="Fetch">
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9" />
-          </svg>
+        <button onClick={handleFetch} disabled={isFetching} className="btn btn-ghost btn-icon" title="Fetch">
+          {isFetching ? (
+            <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 12a9 9 0 11-9-9" />
+            </svg>
+          ) : (
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9" />
+            </svg>
+          )}
         </button>
         <button
           onClick={handlePull}
+          disabled={isPulling}
           className="btn btn-ghost btn-icon relative"
           title={remoteStatus.behind > 0 ? `Pull (${remoteStatus.behind} behind)` : 'Pull'}
         >
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M12 5v14M5 12l7 7 7-7" />
-          </svg>
-          {remoteStatus.behind > 0 && (
+          {isPulling ? (
+            <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 12a9 9 0 11-9-9" />
+            </svg>
+          ) : (
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 5v14M5 12l7 7 7-7" />
+            </svg>
+          )}
+          {!isPulling && remoteStatus.behind > 0 && (
             <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 bg-warning text-background text-[10px] font-medium rounded-full flex items-center justify-center font-mono">
               {remoteStatus.behind}
             </span>
@@ -144,13 +169,20 @@ export function Header() {
         </button>
         <button
           onClick={handlePush}
+          disabled={isPushing}
           className="btn btn-ghost btn-icon relative"
           title={remoteStatus.ahead > 0 ? `Push (${remoteStatus.ahead} ahead)` : 'Push'}
         >
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M12 19V5M5 12l7-7 7 7" />
-          </svg>
-          {remoteStatus.ahead > 0 && (
+          {isPushing ? (
+            <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 12a9 9 0 11-9-9" />
+            </svg>
+          ) : (
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 19V5M5 12l7-7 7 7" />
+            </svg>
+          )}
+          {!isPushing && remoteStatus.ahead > 0 && (
             <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 bg-success text-background text-[10px] font-medium rounded-full flex items-center justify-center font-mono">
               {remoteStatus.ahead}
             </span>
