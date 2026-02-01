@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { X, Sparkles } from 'lucide-react'
 import { AISettings } from './AISettings'
 import { cn } from '@/lib/utils'
@@ -16,7 +17,7 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode }[] = [
 export function SettingsModal({ onClose }: SettingsModalProps) {
   const [activeTab, setActiveTab] = useState<Tab>('ai')
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
       <div
         className="bg-background border border-border rounded-lg w-[500px] max-h-[80vh] flex flex-col"
@@ -53,6 +54,7 @@ export function SettingsModal({ onClose }: SettingsModalProps) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
