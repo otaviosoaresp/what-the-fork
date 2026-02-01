@@ -9,7 +9,7 @@ export async function getStatus(repoPath: string): Promise<FileStatus[]> {
 }
 
 export async function stageFile(repoPath: string, filePath: string): Promise<void> {
-  const result = await executeGit(repoPath, ['add', filePath])
+  const result = await executeGit(repoPath, ['add', '--', filePath])
   if (result.exitCode !== 0) throw new Error(result.stderr)
 }
 
@@ -19,7 +19,7 @@ export async function stageAll(repoPath: string): Promise<void> {
 }
 
 export async function unstageFile(repoPath: string, filePath: string): Promise<void> {
-  const result = await executeGit(repoPath, ['reset', 'HEAD', filePath])
+  const result = await executeGit(repoPath, ['reset', 'HEAD', '--', filePath])
   if (result.exitCode !== 0) throw new Error(result.stderr)
 }
 

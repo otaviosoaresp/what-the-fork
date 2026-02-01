@@ -25,7 +25,7 @@ export async function getUnstagedDiff(repoPath: string): Promise<DiffFile[]> {
 }
 
 export async function getFileDiff(repoPath: string, filePath: string, staged: boolean): Promise<DiffFile[]> {
-  const args = staged ? ['diff', '--staged', filePath] : ['diff', filePath]
+  const args = staged ? ['diff', '--staged', '--', filePath] : ['diff', '--', filePath]
   const result = await executeGit(repoPath, args)
   if (result.exitCode !== 0) throw new Error(result.stderr)
   return parseDiff(result.stdout)

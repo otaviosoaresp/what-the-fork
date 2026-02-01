@@ -15,7 +15,7 @@ export async function getCurrentBranch(repoPath: string): Promise<string> {
 }
 
 export async function checkoutBranch(repoPath: string, branchName: string): Promise<void> {
-  const result = await executeGit(repoPath, ['checkout', branchName])
+  const result = await executeGit(repoPath, ['checkout', '--', branchName])
   if (result.exitCode !== 0) throw new Error(result.stderr)
 }
 
