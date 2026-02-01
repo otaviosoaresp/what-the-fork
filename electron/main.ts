@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain, dialog } from 'electron'
 import path from 'path'
 import { registerGitHandlers } from './git/ipc-handlers'
+import { registerAIHandlers } from './ai/ipc-handlers'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -33,6 +34,7 @@ function createWindow(): void {
 
 app.whenReady().then(() => {
   registerGitHandlers()
+  registerAIHandlers()
   createWindow()
 })
 

@@ -1,8 +1,12 @@
+import { useState } from 'react'
 import { useRepositoryStore } from '@/stores/repository'
 import { useUIStore } from '@/stores/ui'
 import { cn } from '@/lib/utils'
+import { SettingsModal } from '@/components/settings/SettingsModal'
+import { Settings } from 'lucide-react'
 
 export function Header() {
+  const [showSettings, setShowSettings] = useState(false)
   const { repoName, remoteStatus, repoPath } = useRepositoryStore()
   const { diffViewMode, setDiffViewMode } = useUIStore()
 
@@ -97,7 +101,12 @@ export function Header() {
             <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
           </svg>
         </button>
+        <button onClick={() => setShowSettings(true)} className="btn btn-ghost btn-icon" title="Settings">
+          <Settings size={16} />
+        </button>
       </div>
+
+      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
     </header>
   )
 }
