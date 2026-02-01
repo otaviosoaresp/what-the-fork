@@ -1,4 +1,5 @@
 import { useDiffStore } from '@/stores/diff'
+import { useUIStore } from '@/stores/ui'
 import { cn } from '@/lib/utils'
 import type { DiffFile } from '../../../electron/git/types'
 
@@ -9,13 +10,29 @@ interface FileListProps {
 
 export function FileList({ files, selectedFile }: FileListProps) {
   const { selectFile } = useDiffStore()
+  const { fileListExpanded, setFileListExpanded } = useUIStore()
+
+  const collapsedHeight = 'max-h-40'
+  const expandedHeight = 'max-h-[50vh]'
 
   return (
     <div className="border-t border-border bg-background/50">
-      <div className="px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-        Files Changed ({files.length})
-      </div>
-      <div className="max-h-40 overflow-y-auto">
+      <button
+        onClick={() => setFileListExpanded(!fileListExpanded)}
+        className="w-full px-4 py-2 flex items-center justify-between text-xs font-medium text-muted-foreground hover:text-foreground uppercase tracking-wider"
+      >
+        <span>Files Changed ({files.length})</span>
+        <svg
+          className={cn('w-4 h-4 transition-transform', fileListExpanded && 'rotate-180')}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <path d="M18 15l-6-6-6 6" />
+        </svg>
+      </button>
+      <div className={cn('overflow-y-auto transition-all', fileListExpanded ? expandedHeight : collapsedHeight)}>
         {files.map(file => (
           <button
             key={file.path}
