@@ -3,7 +3,7 @@ import { parseRemoteStatus } from '../parser'
 import type { RemoteStatus } from '../types'
 
 export async function fetch(repoPath: string): Promise<void> {
-  const result = await executeGit(repoPath, ['fetch', '--all'])
+  const result = await executeGit(repoPath, ['fetch', '--all', '--prune'])
   if (result.exitCode !== 0) throw new Error(result.stderr)
 }
 
