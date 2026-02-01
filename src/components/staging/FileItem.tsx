@@ -45,9 +45,9 @@ export function FileItem({ file }: FileItemProps) {
 
   const handleClick = async () => {
     if (file.staged) {
-      await loadStagedDiff()
+      await loadStagedDiff(file.path)
     } else {
-      await loadUnstagedDiff()
+      await loadUnstagedDiff(file.path)
     }
   }
 
@@ -58,19 +58,23 @@ export function FileItem({ file }: FileItemProps) {
       className="group flex items-center gap-2 px-3 py-1 text-sm hover:bg-muted cursor-pointer"
       onClick={handleClick}
     >
-      <button
+      <div
         onClick={handleToggleStage}
-        className={cn(
-          'w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-colors',
-          file.staged ? 'bg-accent border-accent' : 'border-border hover:border-accent'
-        )}
+        className="p-1 -m-1 cursor-pointer"
       >
-        {file.staged && (
-          <svg className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-            <path d="M5 12l5 5L20 7" />
-          </svg>
-        )}
-      </button>
+        <div
+          className={cn(
+            'w-4 h-4 rounded border flex items-center justify-center flex-shrink-0 transition-colors',
+            file.staged ? 'bg-accent border-accent' : 'border-border hover:border-accent'
+          )}
+        >
+          {file.staged && (
+            <svg className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+              <path d="M5 12l5 5L20 7" />
+            </svg>
+          )}
+        </div>
+      </div>
       <span className={cn('w-4 text-xs font-mono', statusColors[file.status])}>
         {statusLabels[file.status]}
       </span>

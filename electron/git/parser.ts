@@ -158,7 +158,7 @@ export function parseDiff(output: string): DiffFile[] {
   return files
 }
 
-export function parseRemoteStatus(output: string): RemoteStatus {
+export function parseRemoteStatus(output: string): Omit<RemoteStatus, 'hasUpstream'> {
   const parts = output.trim().split('\t')
   if (parts.length !== 2) return { ahead: 0, behind: 0 }
 

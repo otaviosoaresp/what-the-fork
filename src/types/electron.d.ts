@@ -1,4 +1,10 @@
 import type { Branch, Commit, FileStatus, DiffFile, RemoteStatus } from '../../electron/git/types'
+import type { AIConfigState, GenerateCommitMessageResult } from '../../electron/ai/types'
+
+export interface AIConfig {
+  apiKey?: string
+  model?: string
+}
 
 export interface ElectronAPI {
   openDirectory: () => Promise<string | null>
@@ -30,6 +36,13 @@ export interface ElectronAPI {
     pull: (repoPath: string) => Promise<void>
     push: (repoPath: string) => Promise<void>
     remoteStatus: (repoPath: string) => Promise<RemoteStatus>
+  }
+  ai: {
+    generateCommitMessage: (repoPath: string) => Promise<GenerateCommitMessageResult>
+    setConfig: (config: AIConfig) => Promise<void>
+    getConfig: () => Promise<AIConfigState>
+    clearConfig: () => Promise<void>
+    testConnection: () => Promise<boolean>
   }
 }
 

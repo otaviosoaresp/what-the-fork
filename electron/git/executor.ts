@@ -21,7 +21,7 @@ export function executeGit(repoPath: string, args: string[]): Promise<GitResult>
 
     gitProcess.on('close', (exitCode: number | null) => {
       resolve({
-        stdout: stdout.trim(),
+        stdout: stdout.replace(/\n$/, ''),
         stderr: stderr.trim(),
         exitCode: exitCode ?? 1
       })
