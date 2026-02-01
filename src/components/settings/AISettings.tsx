@@ -7,7 +7,8 @@ const AVAILABLE_MODELS = [
   { id: 'openai/gpt-4o-mini', name: 'GPT-4o Mini' },
   { id: 'openai/gpt-4o', name: 'GPT-4o' },
   { id: 'google/gemini-pro', name: 'Gemini Pro' },
-  { id: 'x-ai/grok-code-fast-1', name: 'Grok Code Fast' }
+  { id: 'x-ai/grok-code-fast-1', name: 'Grok Code Fast' },
+  { id: 'moonshotai/kimi-k2.5', name: 'Kimi K2.5' }
 ]
 
 export function AISettings() {
