@@ -15,6 +15,7 @@ interface DiffState {
   error: string | null
 
   setMode: (mode: DiffMode) => void
+  setBaseBranch: (branch: string | null) => void
   compareBranches: (baseBranch: string, compareBranch: string) => Promise<void>
   loadStagedDiff: () => Promise<void>
   loadUnstagedDiff: () => Promise<void>
@@ -35,6 +36,10 @@ export const useDiffStore = create<DiffState>((set) => ({
 
   setMode: (mode: DiffMode) => {
     set({ mode, files: [], selectedFile: null, selectedCommit: null })
+  },
+
+  setBaseBranch: (branch: string | null) => {
+    set({ baseBranch: branch, compareBranch: null, files: [], selectedFile: null })
   },
 
   compareBranches: async (baseBranch: string, compareBranch: string) => {

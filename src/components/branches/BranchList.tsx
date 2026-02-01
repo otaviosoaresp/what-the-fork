@@ -6,9 +6,8 @@ import { CreateBranchDialog } from './CreateBranchDialog'
 
 export function BranchList() {
   const { branches, loadBranches, isLoading } = useBranchesStore()
-  const { setMode, clearDiff } = useDiffStore()
+  const { baseBranch, setBaseBranch, setMode, clearDiff } = useDiffStore()
   const [showCreateDialog, setShowCreateDialog] = useState(false)
-  const [selectedBase, setSelectedBase] = useState<string | null>(null)
 
   useEffect(() => {
     loadBranches()
@@ -18,11 +17,11 @@ export function BranchList() {
   const remoteBranches = branches.filter(b => b.remote)
 
   const handleSetBase = (branchName: string) => {
-    if (selectedBase === branchName) {
-      setSelectedBase(null)
+    if (baseBranch === branchName) {
+      setBaseBranch(null)
       clearDiff()
     } else {
-      setSelectedBase(branchName)
+      setBaseBranch(branchName)
       setMode('branches')
     }
   }
@@ -35,7 +34,7 @@ export function BranchList() {
     <div>
       <div className="px-3 pb-2 flex items-center justify-between">
         <span className="text-xs text-muted-foreground">
-          {selectedBase ? `Compare with: ${selectedBase}` : 'Click to set base branch'}
+          {baseBranch ? `Base: ${baseBranch} (click another to compare)` : 'Click to set base branch'}
         </span>
         <button
           onClick={() => setShowCreateDialog(true)}
@@ -53,7 +52,7 @@ export function BranchList() {
           <BranchItem
             key={branch.name}
             branch={branch}
-            isBase={selectedBase === branch.name}
+            isBase={baseBranch === branch.name}
             onSetBase={() => handleSetBase(branch.name)}
           />
         ))}
@@ -67,7 +66,7 @@ export function BranchList() {
               <BranchItem
                 key={branch.name}
                 branch={branch}
-                isBase={selectedBase === branch.name}
+                isBase={baseBranch === branch.name}
                 onSetBase={() => handleSetBase(branch.name)}
               />
             ))}
