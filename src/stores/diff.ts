@@ -23,10 +23,11 @@ interface DiffState {
   selectFile: (file: DiffFile | null) => void
   selectNextFile: () => void
   selectPreviousFile: () => void
+  swapBranches: () => Promise<void>
   clearDiff: () => void
 }
 
-export const useDiffStore = create<DiffState>((set) => ({
+export const useDiffStore = create<DiffState>((set, get) => ({
   mode: 'branches',
   baseBranch: null,
   compareBranch: null,
@@ -128,6 +129,12 @@ export const useDiffStore = create<DiffState>((set) => ({
       if (currentIndex <= 0) return state
       return { selectedFile: state.files[currentIndex - 1] }
     })
+  },
+
+  swapBranches: async () => {
+    const { baseBranch, compareBranch, compareBranches } = get()
+    if (!baseBranch || !compareBranch) return
+    await compareBranches(compareBranch, baseBranch)
   },
 
   clearDiff: () => {
