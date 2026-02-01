@@ -1,8 +1,11 @@
+import { useState } from 'react'
 import { useRepositoryStore } from '@/stores/repository'
+import { useBranchesStore } from '@/stores/branches'
 import { useUIStore } from '@/stores/ui'
 import { cn } from '@/lib/utils'
 
 export function Header() {
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const { repoName, remoteStatus, repoPath } = useRepositoryStore()
   const { diffViewMode, setDiffViewMode } = useUIStore()
 
@@ -29,6 +32,20 @@ export function Header() {
     const path = await window.electron.openDirectory()
     if (path) {
       await useRepositoryStore.getState().loadRepository(path)
+    }
+  }
+
+  const handleRefresh = async () => {
+    if (!repoPath || isRefreshing) return
+    setIsRefreshing(true)
+    try {
+      await Promise.all([
+        useRepositoryStore.getState().refreshStatus(),
+        useRepositoryStore.getState().refreshRemoteStatus(),
+        useBranchesStore.getState().loadBranches()
+      ])
+    } finally {
+      setIsRefreshing(false)
     }
   }
 
@@ -71,6 +88,26 @@ export function Header() {
             Unified
           </button>
         </div>
+
+        <div className="w-px h-6 bg-border" />
+
+        <button
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="btn btn-ghost btn-icon"
+          title="Refresh"
+        >
+          <svg
+            className={cn('w-4 h-4', isRefreshing && 'animate-spin')}
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <path d="M21 12a9 9 0 11-9-9" />
+            <path d="M21 3v6h-6" />
+          </svg>
+        </button>
 
         <div className="w-px h-6 bg-border" />
 
