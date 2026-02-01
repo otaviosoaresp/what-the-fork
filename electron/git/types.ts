@@ -19,6 +19,7 @@ export interface Commit {
   message: string
   author: string
   date: string
+  refs?: string[]
 }
 
 export interface FileStatus {

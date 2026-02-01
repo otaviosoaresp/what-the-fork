@@ -29,16 +29,24 @@ export function parseLog(output: string): Commit[] {
     if (parts.length < 4) return null
 
     const hash = parts[0]
-    const author = parts[parts.length - 2]
-    const date = parts[parts.length - 1]
-    const message = parts.slice(1, parts.length - 2).join('|')
+    const message = parts[1]
+    const author = parts[2]
+    const date = parts[3]
+    const refsStr = parts[4] || ''
+
+    const refs = refsStr
+      .split(',')
+      .map(r => r.trim())
+      .filter(r => r && !r.includes('HEAD') && !r.includes('->'))
+      .map(r => r.replace('origin/', ''))
 
     return {
       hash,
       shortHash: hash.substring(0, 7),
       message,
       author,
-      date
+      date,
+      refs: refs.length > 0 ? refs : undefined
     }
   }).filter((c): c is Commit => c !== null)
 }

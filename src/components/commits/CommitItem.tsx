@@ -27,7 +27,7 @@ export function CommitItem({ commit }: CommitItemProps) {
       )}
       onClick={handleClick}
     >
-      <div className="flex items-center gap-2 mb-1">
+      <div className="flex items-center gap-2 mb-1 flex-wrap">
         <button
           onClick={handleCopyHash}
           className="font-mono text-xs text-accent hover:underline"
@@ -36,6 +36,14 @@ export function CommitItem({ commit }: CommitItemProps) {
           {commit.shortHash}
         </button>
         <span className="text-xs text-muted-foreground">{commit.date}</span>
+        {commit.refs && commit.refs.map(ref => (
+          <span
+            key={ref}
+            className="text-[10px] px-1.5 py-0.5 bg-accent/20 text-accent rounded"
+          >
+            {ref}
+          </span>
+        ))}
       </div>
       <p className="text-sm truncate">{commit.message}</p>
       <p className="text-xs text-muted-foreground truncate">{commit.author}</p>
