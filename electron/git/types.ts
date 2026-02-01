@@ -9,6 +9,7 @@ export interface Branch {
   current: boolean
   remote: boolean
   tracking?: string
+  lastCommitDate?: string
 }
 
 export interface Commit {

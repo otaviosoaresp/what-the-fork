@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react'
+import { useEffect, useState, useMemo, useRef } from 'react'
 import { useBranchesStore } from '@/stores/branches'
 import { useDiffStore } from '@/stores/diff'
 import { useRepositoryStore } from '@/stores/repository'
@@ -7,6 +7,8 @@ import { BranchItem } from './BranchItem'
 import { CreateBranchDialog } from './CreateBranchDialog'
 
 const PAGE_SIZE = 10
+
+type SortOption = 'recent' | 'name'
 
 export function BranchList() {
   const { branches, loadBranches, isLoading } = useBranchesStore()
@@ -18,6 +20,9 @@ export function BranchList() {
   const [localVisibleCount, setLocalVisibleCount] = useState(PAGE_SIZE)
   const [remoteVisibleCount, setRemoteVisibleCount] = useState(PAGE_SIZE)
   const [remoteCollapsed, setRemoteCollapsed] = useState(true)
+  const [sortOption, setSortOption] = useState<SortOption>('recent')
+  const [showSortMenu, setShowSortMenu] = useState(false)
+  const sortMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     loadBranches()
@@ -27,6 +32,16 @@ export function BranchList() {
     setLocalVisibleCount(PAGE_SIZE)
     setRemoteVisibleCount(PAGE_SIZE)
   }, [searchQuery])
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (sortMenuRef.current && !sortMenuRef.current.contains(e.target as Node)) {
+        setShowSortMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   const favoriteBranchNames = useMemo(() => {
     return repoPath ? (allFavorites[repoPath] || []) : []
@@ -51,8 +66,12 @@ export function BranchList() {
   }, [filteredBranches, favoriteBranchNames])
 
   const nonFavoriteLocalBranches = useMemo(() => {
-    return localBranches.filter(b => !favoriteBranchNames.includes(b.name))
-  }, [localBranches, favoriteBranchNames])
+    const filtered = localBranches.filter(b => !favoriteBranchNames.includes(b.name))
+    if (sortOption === 'name') {
+      return [...filtered].sort((a, b) => a.name.localeCompare(b.name))
+    }
+    return filtered
+  }, [localBranches, favoriteBranchNames, sortOption])
 
   const nonFavoriteRemoteBranches = useMemo(() => {
     return remoteBranches.filter(b => !favoriteBranchNames.includes(b.name))
@@ -160,8 +179,45 @@ export function BranchList() {
 
       {(displayedLocalBranches.length > 0 || hasMoreLocal) && (
         <>
-          <div className="px-3 py-1 text-xs text-muted-foreground">
-            Local ({localBranches.length})
+          <div className="px-3 py-1 text-xs text-muted-foreground flex items-center justify-between">
+            <span>Local ({localBranches.length})</span>
+            <div className="relative" ref={sortMenuRef}>
+              <button
+                onClick={() => setShowSortMenu(!showSortMenu)}
+                className="p-1 rounded hover:bg-muted flex items-center gap-1"
+                title="Sort branches"
+              >
+                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M3 6h18M6 12h12M9 18h6" />
+                </svg>
+              </button>
+              {showSortMenu && (
+                <div className="absolute right-0 top-full mt-1 bg-background border border-border rounded-md shadow-lg z-10 min-w-[140px]">
+                  <button
+                    onClick={() => { setSortOption('recent'); setShowSortMenu(false) }}
+                    className={`w-full px-3 py-1.5 text-xs text-left hover:bg-muted flex items-center justify-between ${sortOption === 'recent' ? 'text-accent' : ''}`}
+                  >
+                    <span>Last updated</span>
+                    {sortOption === 'recent' && (
+                      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M20 6L9 17l-5-5" />
+                      </svg>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => { setSortOption('name'); setShowSortMenu(false) }}
+                    className={`w-full px-3 py-1.5 text-xs text-left hover:bg-muted flex items-center justify-between ${sortOption === 'name' ? 'text-accent' : ''}`}
+                  >
+                    <span>Name (A-Z)</span>
+                    {sortOption === 'name' && (
+                      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M20 6L9 17l-5-5" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
           <div className="space-y-0.5">
             {displayedLocalBranches.map(branch => (
