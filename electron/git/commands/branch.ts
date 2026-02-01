@@ -3,7 +3,7 @@ import { parseBranches } from '../parser'
 import type { Branch } from '../types'
 
 export async function listBranches(repoPath: string): Promise<Branch[]> {
-  const format = '%(refname:short)|%(HEAD)|%(committerdate:iso-strict)'
+  const format = '%(refname)|%(HEAD)|%(committerdate:iso-strict)'
   const result = await executeGit(repoPath, [
     'for-each-ref',
     '--sort=-committerdate',
@@ -19,13 +19,15 @@ function parseBranchesWithDate(output: string): Branch[] {
   if (!output.trim()) return []
 
   return output.split('\n').filter(Boolean).map(line => {
-    const [name, head, date] = line.split('|')
+    const [refname, head, date] = line.split('|')
     const current = head === '*'
-    const remote = name.startsWith('origin/') || name.includes('/')
-    const cleanName = remote ? name : name
+    const remote = refname.startsWith('refs/remotes/')
+    const name = remote
+      ? refname.replace('refs/remotes/', '')
+      : refname.replace('refs/heads/', '')
 
     return {
-      name: cleanName,
+      name,
       current,
       remote,
       lastCommitDate: date || undefined
