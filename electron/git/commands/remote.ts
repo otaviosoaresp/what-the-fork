@@ -8,13 +8,35 @@ export async function fetch(repoPath: string): Promise<void> {
 }
 
 export async function pull(repoPath: string): Promise<void> {
-  const result = await executeGit(repoPath, ['pull'])
-  if (result.exitCode !== 0) throw new Error(result.stderr)
+  const upstreamCheck = await executeGit(repoPath, ['rev-parse', '--abbrev-ref', '@{upstream}'])
+
+  if (upstreamCheck.exitCode !== 0) {
+    const branchResult = await executeGit(repoPath, ['rev-parse', '--abbrev-ref', 'HEAD'])
+    if (branchResult.exitCode !== 0) throw new Error(branchResult.stderr)
+
+    const currentBranch = branchResult.stdout.trim()
+    const result = await executeGit(repoPath, ['pull', 'origin', currentBranch])
+    if (result.exitCode !== 0) throw new Error(result.stderr)
+  } else {
+    const result = await executeGit(repoPath, ['pull'])
+    if (result.exitCode !== 0) throw new Error(result.stderr)
+  }
 }
 
 export async function push(repoPath: string): Promise<void> {
-  const result = await executeGit(repoPath, ['push'])
-  if (result.exitCode !== 0) throw new Error(result.stderr)
+  const upstreamCheck = await executeGit(repoPath, ['rev-parse', '--abbrev-ref', '@{upstream}'])
+
+  if (upstreamCheck.exitCode !== 0) {
+    const branchResult = await executeGit(repoPath, ['rev-parse', '--abbrev-ref', 'HEAD'])
+    if (branchResult.exitCode !== 0) throw new Error(branchResult.stderr)
+
+    const currentBranch = branchResult.stdout.trim()
+    const result = await executeGit(repoPath, ['push', '--set-upstream', 'origin', currentBranch])
+    if (result.exitCode !== 0) throw new Error(result.stderr)
+  } else {
+    const result = await executeGit(repoPath, ['push'])
+    if (result.exitCode !== 0) throw new Error(result.stderr)
+  }
 }
 
 export async function getRemoteStatus(repoPath: string): Promise<RemoteStatus> {
