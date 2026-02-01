@@ -72,7 +72,12 @@ export function BranchItem({ branch, isBase, isFavorite, onSetBase, onToggleFavo
           <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3" />
         </svg>
       )}
-      <span className="truncate flex-1">{branch.name}</span>
+      <span className={cn('truncate flex-1', branch.gone && 'text-muted-foreground line-through')}>{branch.name}</span>
+      {branch.gone && (
+        <span className="text-[10px] px-1.5 py-0.5 bg-destructive/10 text-destructive rounded flex-shrink-0" title="Remote branch was deleted">
+          gone
+        </span>
+      )}
       {showActions && (
         <div className="flex items-center gap-1">
           <button
