@@ -17,6 +17,7 @@ export function BranchList() {
   const [searchQuery, setSearchQuery] = useState('')
   const [localVisibleCount, setLocalVisibleCount] = useState(PAGE_SIZE)
   const [remoteVisibleCount, setRemoteVisibleCount] = useState(PAGE_SIZE)
+  const [remoteCollapsed, setRemoteCollapsed] = useState(true)
 
   useEffect(() => {
     loadBranches()
@@ -185,30 +186,46 @@ export function BranchList() {
         </>
       )}
 
-      {(displayedRemoteBranches.length > 0 || hasMoreRemote) && (
+      {remoteBranches.length > 0 && (
         <>
-          <div className="px-3 py-1 text-xs text-muted-foreground mt-2">
-            Remote ({remoteBranches.length})
-          </div>
-          <div className="space-y-0.5">
-            {displayedRemoteBranches.map(branch => (
-              <BranchItem
-                key={branch.name}
-                branch={branch}
-                isBase={baseBranch === branch.name}
-                isFavorite={favoriteBranchNames.includes(branch.name)}
-                onSetBase={() => handleSetBase(branch.name)}
-                onToggleFavorite={() => handleToggleFavorite(branch.name)}
-              />
-            ))}
-          </div>
-          {hasMoreRemote && (
-            <button
-              onClick={() => setRemoteVisibleCount(prev => prev + PAGE_SIZE)}
-              className="w-full px-3 py-1.5 text-xs text-accent hover:bg-muted transition-colors"
+          <button
+            onClick={() => setRemoteCollapsed(!remoteCollapsed)}
+            className="w-full px-3 py-1 text-xs text-muted-foreground mt-2 flex items-center justify-between hover:text-foreground transition-colors"
+          >
+            <span>Remote ({remoteBranches.length})</span>
+            <svg
+              className={`w-3 h-3 transition-transform ${remoteCollapsed ? '' : 'rotate-180'}`}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
             >
-              Show {Math.min(PAGE_SIZE, remainingRemote)} more
-            </button>
+              <path d="M6 9l6 6 6-6" />
+            </svg>
+          </button>
+          {!remoteCollapsed && (
+            <>
+              <div className="space-y-0.5">
+                {displayedRemoteBranches.map(branch => (
+                  <BranchItem
+                    key={branch.name}
+                    branch={branch}
+                    isBase={baseBranch === branch.name}
+                    isFavorite={favoriteBranchNames.includes(branch.name)}
+                    onSetBase={() => handleSetBase(branch.name)}
+                    onToggleFavorite={() => handleToggleFavorite(branch.name)}
+                  />
+                ))}
+              </div>
+              {hasMoreRemote && (
+                <button
+                  onClick={() => setRemoteVisibleCount(prev => prev + PAGE_SIZE)}
+                  className="w-full px-3 py-1.5 text-xs text-accent hover:bg-muted transition-colors"
+                >
+                  Show {Math.min(PAGE_SIZE, remainingRemote)} more
+                </button>
+              )}
+            </>
           )}
         </>
       )}
