@@ -10,7 +10,7 @@ interface UIState {
   expandedSections: SidebarSection[]
   recentRepositories: string[]
   favoriteBranches: Record<string, string[]>
-  fileListExpanded: boolean
+  fileListHeight: number
 
   setDiffViewMode: (mode: DiffViewMode) => void
   setSidebarWidth: (width: number) => void
@@ -19,7 +19,7 @@ interface UIState {
   toggleFavoriteBranch: (repoPath: string, branchName: string) => void
   isFavoriteBranch: (repoPath: string, branchName: string) => boolean
   getFavoriteBranches: (repoPath: string) => string[]
-  setFileListExpanded: (expanded: boolean) => void
+  setFileListHeight: (height: number) => void
 }
 
 export const useUIStore = create<UIState>()(
@@ -30,7 +30,7 @@ export const useUIStore = create<UIState>()(
       expandedSections: ['branches', 'staging', 'commits'],
       recentRepositories: [],
       favoriteBranches: {},
-      fileListExpanded: false,
+      fileListHeight: 160,
 
       setDiffViewMode: (mode: DiffViewMode) => {
         set({ diffViewMode: mode })
@@ -82,8 +82,8 @@ export const useUIStore = create<UIState>()(
         return favoriteBranches[repoPath] || []
       },
 
-      setFileListExpanded: (expanded: boolean) => {
-        set({ fileListExpanded: expanded })
+      setFileListHeight: (height: number) => {
+        set({ fileListHeight: Math.max(80, Math.min(500, height)) })
       }
     }),
     {

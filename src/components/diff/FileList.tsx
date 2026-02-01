@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useDiffStore } from '@/stores/diff'
 import { useUIStore } from '@/stores/ui'
 import { cn } from '@/lib/utils'
@@ -10,29 +11,58 @@ interface FileListProps {
 
 export function FileList({ files, selectedFile }: FileListProps) {
   const { selectFile } = useDiffStore()
-  const { fileListExpanded, setFileListExpanded } = useUIStore()
+  const { fileListHeight, setFileListHeight } = useUIStore()
+  const [isDragging, setIsDragging] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const startYRef = useRef(0)
+  const startHeightRef = useRef(0)
 
-  const collapsedHeight = 'max-h-40'
-  const expandedHeight = 'max-h-[50vh]'
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    setIsDragging(true)
+    startYRef.current = e.clientY
+    startHeightRef.current = fileListHeight
+  }, [fileListHeight])
+
+  useEffect(() => {
+    if (!isDragging) return
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const delta = startYRef.current - e.clientY
+      const newHeight = startHeightRef.current + delta
+      setFileListHeight(newHeight)
+    }
+
+    const handleMouseUp = () => {
+      setIsDragging(false)
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [isDragging, setFileListHeight])
 
   return (
-    <div className="border-t border-border bg-background/50">
-      <button
-        onClick={() => setFileListExpanded(!fileListExpanded)}
-        className="w-full px-4 py-2 flex items-center justify-between text-xs font-medium text-muted-foreground hover:text-foreground uppercase tracking-wider"
-      >
+    <div ref={containerRef} className="border-t border-border bg-background/50 flex flex-col">
+      <div
+        onMouseDown={handleMouseDown}
+        className={cn(
+          'h-1 cursor-ns-resize hover:bg-accent/50 transition-colors flex-shrink-0',
+          isDragging && 'bg-accent'
+        )}
+      />
+      <div className="px-4 py-2 flex items-center justify-between text-xs font-medium text-muted-foreground uppercase tracking-wider flex-shrink-0">
         <span>Files Changed ({files.length})</span>
-        <svg
-          className={cn('w-4 h-4 transition-transform', fileListExpanded && 'rotate-180')}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <path d="M18 15l-6-6-6 6" />
-        </svg>
-      </button>
-      <div className={cn('overflow-y-auto transition-all', fileListExpanded ? expandedHeight : collapsedHeight)}>
+        <span className="text-[10px] normal-case">drag to resize</span>
+      </div>
+      <div
+        className="overflow-y-auto flex-1"
+        style={{ height: fileListHeight }}
+      >
         {files.map(file => (
           <button
             key={file.path}
