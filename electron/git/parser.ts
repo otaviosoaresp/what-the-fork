@@ -28,12 +28,17 @@ export function parseLog(output: string): Commit[] {
     const parts = line.split('|')
     if (parts.length < 4) return null
 
+    const hash = parts[0]
+    const author = parts[parts.length - 2]
+    const date = parts[parts.length - 1]
+    const message = parts.slice(1, parts.length - 2).join('|')
+
     return {
-      hash: parts[0],
-      shortHash: parts[0].substring(0, 7),
-      message: parts[1],
-      author: parts[2],
-      date: parts[3]
+      hash,
+      shortHash: hash.substring(0, 7),
+      message,
+      author,
+      date
     }
   }).filter((c): c is Commit => c !== null)
 }
@@ -46,7 +51,7 @@ export function parseStatus(output: string): FileStatus[] {
 
     const indexStatus = line[0]
     const workTreeStatus = line[1]
-    const path = line.substring(3)
+    let path = line.substring(3)
 
     let status: FileStatus['status'] = 'modified'
     let staged = false
@@ -62,6 +67,10 @@ export function parseStatus(output: string): FileStatus[] {
     } else if (indexStatus === 'R') {
       status = 'renamed'
       staged = true
+      const arrowIndex = path.indexOf(' -> ')
+      if (arrowIndex !== -1) {
+        path = path.substring(arrowIndex + 4)
+      }
     } else if (indexStatus === 'M') {
       status = 'modified'
       staged = true
@@ -92,6 +101,9 @@ export function parseDiff(output: string): DiffFile[] {
     let additions = 0
     let deletions = 0
 
+    let oldLineOffset = 0
+    let newLineOffset = 0
+
     for (const line of lines) {
       const chunkMatch = line.match(/^@@ -(\d+),?(\d*) \+(\d+),?(\d*) @@/)
       if (chunkMatch) {
@@ -103,6 +115,8 @@ export function parseDiff(output: string): DiffFile[] {
           newLines: parseInt(chunkMatch[4] || '1'),
           lines: []
         }
+        oldLineOffset = 0
+        newLineOffset = 0
         continue
       }
 
@@ -113,25 +127,26 @@ export function parseDiff(output: string): DiffFile[] {
         currentChunk.lines.push({
           type: 'add',
           content: line.substring(1),
-          newLineNumber: currentChunk.newStart + currentChunk.lines.filter(l => l.type !== 'remove').length
+          newLineNumber: currentChunk.newStart + newLineOffset
         })
+        newLineOffset++
       } else if (line.startsWith('-') && !line.startsWith('---')) {
         deletions++
         currentChunk.lines.push({
           type: 'remove',
           content: line.substring(1),
-          oldLineNumber: currentChunk.oldStart + currentChunk.lines.filter(l => l.type !== 'add').length
+          oldLineNumber: currentChunk.oldStart + oldLineOffset
         })
+        oldLineOffset++
       } else if (line.startsWith(' ')) {
-        const contextLines = currentChunk.lines.filter(l => l.type === 'context').length
-        const addLines = currentChunk.lines.filter(l => l.type === 'add').length
-        const removeLines = currentChunk.lines.filter(l => l.type === 'remove').length
         currentChunk.lines.push({
           type: 'context',
           content: line.substring(1),
-          oldLineNumber: currentChunk.oldStart + contextLines + removeLines,
-          newLineNumber: currentChunk.newStart + contextLines + addLines
+          oldLineNumber: currentChunk.oldStart + oldLineOffset,
+          newLineNumber: currentChunk.newStart + newLineOffset
         })
+        oldLineOffset++
+        newLineOffset++
       }
     }
 
