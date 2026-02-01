@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent;
+    @apply disabled:pointer-events-none disabled:opacity-50;
+    @apply px-4 py-2;
+  }
+
+  .btn-primary {
+    @apply bg-accent text-accent-foreground hover:bg-accent/90;
+  }
+
+  .btn-secondary {
+    @apply bg-muted text-foreground hover:bg-muted/80;
+  }
+
+  .btn-ghost {
+    @apply hover:bg-muted;
+  }
+
+  .btn-icon {
+    @apply h-8 w-8 p-0;
+  }
+
+  .input {
+    @apply flex h-9 w-full rounded-md border border-border bg-background px-3 py-1 text-sm;
+    @apply placeholder:text-muted-foreground;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent;
+    @apply disabled:cursor-not-allowed disabled:opacity-50;
+  }
+}
