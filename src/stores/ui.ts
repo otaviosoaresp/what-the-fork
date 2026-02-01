@@ -9,11 +9,17 @@ interface UIState {
   sidebarWidth: number
   expandedSections: SidebarSection[]
   recentRepositories: string[]
+  favoriteBranches: Record<string, string[]>
+  fileListExpanded: boolean
 
   setDiffViewMode: (mode: DiffViewMode) => void
   setSidebarWidth: (width: number) => void
   toggleSection: (section: SidebarSection) => void
   addRecentRepository: (path: string) => void
+  toggleFavoriteBranch: (repoPath: string, branchName: string) => void
+  isFavoriteBranch: (repoPath: string, branchName: string) => boolean
+  getFavoriteBranches: (repoPath: string) => string[]
+  setFileListExpanded: (expanded: boolean) => void
 }
 
 export const useUIStore = create<UIState>()(
@@ -23,6 +29,8 @@ export const useUIStore = create<UIState>()(
       sidebarWidth: 280,
       expandedSections: ['branches', 'staging', 'commits'],
       recentRepositories: [],
+      favoriteBranches: {},
+      fileListExpanded: false,
 
       setDiffViewMode: (mode: DiffViewMode) => {
         set({ diffViewMode: mode })
@@ -48,6 +56,34 @@ export const useUIStore = create<UIState>()(
         set({
           recentRepositories: [path, ...filtered].slice(0, 10)
         })
+      },
+
+      toggleFavoriteBranch: (repoPath: string, branchName: string) => {
+        const { favoriteBranches } = get()
+        const repoFavorites = favoriteBranches[repoPath] || []
+        const isFavorite = repoFavorites.includes(branchName)
+        set({
+          favoriteBranches: {
+            ...favoriteBranches,
+            [repoPath]: isFavorite
+              ? repoFavorites.filter(b => b !== branchName)
+              : [...repoFavorites, branchName]
+          }
+        })
+      },
+
+      isFavoriteBranch: (repoPath: string, branchName: string) => {
+        const { favoriteBranches } = get()
+        return (favoriteBranches[repoPath] || []).includes(branchName)
+      },
+
+      getFavoriteBranches: (repoPath: string) => {
+        const { favoriteBranches } = get()
+        return favoriteBranches[repoPath] || []
+      },
+
+      setFileListExpanded: (expanded: boolean) => {
+        set({ fileListExpanded: expanded })
       }
     }),
     {
