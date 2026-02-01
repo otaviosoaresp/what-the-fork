@@ -2,30 +2,47 @@ import { useState } from 'react'
 import { useRepositoryStore } from '@/stores/repository'
 import { useBranchesStore } from '@/stores/branches'
 import { useUIStore } from '@/stores/ui'
+import { useToastStore } from '@/stores/toast'
 import { cn } from '@/lib/utils'
 
 export function Header() {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const { repoName, remoteStatus, repoPath } = useRepositoryStore()
+  const addToast = useToastStore((s) => s.addToast)
   const { diffViewMode, setDiffViewMode } = useUIStore()
 
   const handleFetch = async () => {
     if (!repoPath) return
-    await window.electron.git.fetch(repoPath)
-    await useRepositoryStore.getState().refreshRemoteStatus()
+    try {
+      await window.electron.git.fetch(repoPath)
+      await useRepositoryStore.getState().refreshRemoteStatus()
+      addToast('Fetch completed', 'success')
+    } catch (error) {
+      addToast(error instanceof Error ? error.message : 'Fetch failed', 'error')
+    }
   }
 
   const handlePull = async () => {
     if (!repoPath) return
-    await window.electron.git.pull(repoPath)
-    await useRepositoryStore.getState().refreshStatus()
-    await useRepositoryStore.getState().refreshRemoteStatus()
+    try {
+      await window.electron.git.pull(repoPath)
+      await useRepositoryStore.getState().refreshStatus()
+      await useRepositoryStore.getState().refreshRemoteStatus()
+      addToast('Pull completed', 'success')
+    } catch (error) {
+      addToast(error instanceof Error ? error.message : 'Pull failed', 'error')
+    }
   }
 
   const handlePush = async () => {
     if (!repoPath) return
-    await window.electron.git.push(repoPath)
-    await useRepositoryStore.getState().refreshRemoteStatus()
+    try {
+      await window.electron.git.push(repoPath)
+      await useRepositoryStore.getState().refreshRemoteStatus()
+      addToast('Push completed', 'success')
+    } catch (error) {
+      addToast(error instanceof Error ? error.message : 'Push failed', 'error')
+    }
   }
 
   const handleOpenRepo = async () => {

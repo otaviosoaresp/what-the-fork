@@ -4,6 +4,7 @@ import { Sidebar } from './components/layout/Sidebar'
 import { MainPanel } from './components/layout/MainPanel'
 import { Header } from './components/layout/Header'
 import { WelcomeScreen } from './components/WelcomeScreen'
+import { ToastContainer } from './components/ui/Toast'
 
 export default function App() {
   const { repoPath, loadRepository } = useRepositoryStore()
@@ -41,16 +42,24 @@ export default function App() {
   }, [loadRepository])
 
   if (!repoPath) {
-    return <WelcomeScreen />
+    return (
+      <>
+        <WelcomeScreen />
+        <ToastContainer />
+      </>
+    )
   }
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
-      <Header />
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
-        <MainPanel />
+    <>
+      <div className="h-screen flex flex-col overflow-hidden">
+        <Header />
+        <div className="flex flex-1 overflow-hidden">
+          <Sidebar />
+          <MainPanel />
+        </div>
       </div>
-    </div>
+      <ToastContainer />
+    </>
   )
 }
