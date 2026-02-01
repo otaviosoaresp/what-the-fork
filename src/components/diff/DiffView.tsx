@@ -7,7 +7,7 @@ interface DiffViewProps {
   viewMode: 'split' | 'unified'
 }
 
-export function DiffView({ file, viewMode }: DiffViewProps): JSX.Element {
+export function DiffView({ file, viewMode }: DiffViewProps) {
   if (file.chunks.length === 0) {
     return (
       <div className="h-full flex items-center justify-center text-muted-foreground">

@@ -11,7 +11,7 @@ interface BranchItemProps {
   onSetBase?: () => void
 }
 
-export function BranchItem({ branch, isBase, onSetBase }: BranchItemProps): JSX.Element {
+export function BranchItem({ branch, isBase, onSetBase }: BranchItemProps) {
   const { checkout, deleteBranch } = useBranchesStore()
   const { compareBranches, baseBranch } = useDiffStore()
   const { currentBranch } = useRepositoryStore()

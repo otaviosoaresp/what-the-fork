@@ -5,7 +5,7 @@ interface UnifiedViewProps {
   file: DiffFile
 }
 
-export function UnifiedView({ file }: UnifiedViewProps): JSX.Element {
+export function UnifiedView({ file }: UnifiedViewProps) {
   return (
     <div className="h-full overflow-auto font-mono text-sm">
       <div className="px-4 py-2 bg-muted/50 border-b border-border sticky top-0">

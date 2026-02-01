@@ -1,7 +1,7 @@
 import { useRepositoryStore } from '@/stores/repository'
 import { useUIStore } from '@/stores/ui'
 
-export function WelcomeScreen(): JSX.Element {
+export function WelcomeScreen() {
   const { loadRepository, isLoading, error } = useRepositoryStore()
   const { recentRepositories, addRecentRepository } = useUIStore()
 

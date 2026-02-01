@@ -3,7 +3,7 @@ import { useUIStore } from '@/stores/ui'
 import { DiffView } from '@/components/diff/DiffView'
 import { FileList } from '@/components/diff/FileList'
 
-export function MainPanel(): JSX.Element {
+export function MainPanel() {
   const { files, selectedFile } = useDiffStore()
   const { diffViewMode } = useUIStore()
 

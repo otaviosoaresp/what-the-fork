@@ -1,14 +1,30 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --font-family-sans: 'Inter', system-ui, sans-serif;
+  --font-family-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  --color-background: #0f172a;
+  --color-foreground: #e2e8f0;
+  --color-muted: #334155;
+  --color-muted-foreground: #94a3b8;
+  --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-subtle: rgba(255, 255, 255, 0.05);
+  --color-accent: #3b82f6;
+  --color-accent-foreground: #ffffff;
+  --color-destructive: #ef4444;
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+}
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: var(--color-border);
   }
 
   body {
-    @apply bg-background text-foreground;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
@@ -18,46 +34,92 @@
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-transparent;
+    background-color: transparent;
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-muted rounded-full;
+    background-color: var(--color-muted);
+    border-radius: 9999px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-muted-foreground;
+    background-color: var(--color-muted-foreground);
   }
 }
 
 @layer components {
   .btn {
-    @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors;
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent;
-    @apply disabled:pointer-events-none disabled:opacity-50;
-    @apply px-4 py-2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition-property: color, background-color;
+    transition-duration: 150ms;
+    padding: 8px 16px;
+  }
+
+  .btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-accent);
+  }
+
+  .btn:disabled {
+    pointer-events: none;
+    opacity: 0.5;
   }
 
   .btn-primary {
-    @apply bg-accent text-accent-foreground hover:bg-accent/90;
+    background-color: var(--color-accent);
+    color: var(--color-accent-foreground);
+  }
+
+  .btn-primary:hover {
+    background-color: color-mix(in srgb, var(--color-accent) 90%, transparent);
   }
 
   .btn-secondary {
-    @apply bg-muted text-foreground hover:bg-muted/80;
+    background-color: var(--color-muted);
+    color: var(--color-foreground);
   }
 
-  .btn-ghost {
-    @apply hover:bg-muted;
+  .btn-secondary:hover {
+    background-color: color-mix(in srgb, var(--color-muted) 80%, transparent);
+  }
+
+  .btn-ghost:hover {
+    background-color: var(--color-muted);
   }
 
   .btn-icon {
-    @apply h-8 w-8 p-0;
+    height: 32px;
+    width: 32px;
+    padding: 0;
   }
 
   .input {
-    @apply flex h-9 w-full rounded-md border border-border bg-background px-3 py-1 text-sm;
-    @apply placeholder:text-muted-foreground;
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent;
-    @apply disabled:cursor-not-allowed disabled:opacity-50;
+    display: flex;
+    height: 36px;
+    width: 100%;
+    border-radius: 6px;
+    border: 1px solid var(--color-border);
+    background-color: var(--color-background);
+    padding: 4px 12px;
+    font-size: 0.875rem;
+  }
+
+  .input::placeholder {
+    color: var(--color-muted-foreground);
+  }
+
+  .input:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--color-accent);
+  }
+
+  .input:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
   }
 }

@@ -6,7 +6,7 @@ interface CommitItemProps {
   commit: Commit
 }
 
-export function CommitItem({ commit }: CommitItemProps): JSX.Element {
+export function CommitItem({ commit }: CommitItemProps) {
   const { loadCommitDiff, selectedCommit } = useDiffStore()
   const isSelected = selectedCommit?.hash === commit.hash
 

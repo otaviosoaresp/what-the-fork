@@ -10,7 +10,7 @@ interface SectionProps {
   children: React.ReactNode
 }
 
-function Section({ title, section, children }: SectionProps): JSX.Element {
+function Section({ title, section, children }: SectionProps) {
   const { expandedSections, toggleSection } = useUIStore()
   const isExpanded = expandedSections.includes(section)
 
@@ -36,7 +36,7 @@ function Section({ title, section, children }: SectionProps): JSX.Element {
   )
 }
 
-export function Sidebar(): JSX.Element {
+export function Sidebar() {
   const { sidebarWidth } = useUIStore()
 
   return (

@@ -2,7 +2,7 @@ import { useRepositoryStore } from '@/stores/repository'
 import { useUIStore } from '@/stores/ui'
 import { cn } from '@/lib/utils'
 
-export function Header(): JSX.Element {
+export function Header() {
   const { repoName, remoteStatus, repoPath } = useRepositoryStore()
   const { diffViewMode, setDiffViewMode } = useUIStore()
 

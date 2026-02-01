@@ -3,7 +3,7 @@ import { useRepositoryStore } from '@/stores/repository'
 import { CommitItem } from './CommitItem'
 import type { Commit } from '../../../electron/git/types'
 
-export function CommitList(): JSX.Element {
+export function CommitList() {
   const { repoPath } = useRepositoryStore()
   const [commits, setCommits] = useState<Commit[]>([])
   const [isLoading, setIsLoading] = useState(false)

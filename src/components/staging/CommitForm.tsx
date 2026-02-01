@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useRepositoryStore } from '@/stores/repository'
 
-export function CommitForm(): JSX.Element {
+export function CommitForm() {
   const [message, setMessage] = useState('')
   const [isCommitting, setIsCommitting] = useState(false)
   const { commit, status } = useRepositoryStore()

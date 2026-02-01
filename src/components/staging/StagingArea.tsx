@@ -2,7 +2,7 @@ import { useRepositoryStore } from '@/stores/repository'
 import { FileItem } from './FileItem'
 import { CommitForm } from './CommitForm'
 
-export function StagingArea(): JSX.Element {
+export function StagingArea() {
   const { status, stageAll, unstageAll } = useRepositoryStore()
 
   const staged = status.filter(f => f.staged)

@@ -23,7 +23,7 @@ const statusLabels: Record<FileStatus['status'], string> = {
   untracked: '?'
 }
 
-export function FileItem({ file }: FileItemProps): JSX.Element {
+export function FileItem({ file }: FileItemProps) {
   const { stageFile, unstageFile, discardChanges } = useRepositoryStore()
   const { loadStagedDiff, loadUnstagedDiff } = useDiffStore()
 

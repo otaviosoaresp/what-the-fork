@@ -2,7 +2,7 @@
   "name": "git-branch-viewer",
   "version": "0.1.0",
   "description": "Git desktop client for diff visualization",
-  "main": "dist-electron/main.js",
+  "main": "dist-electron/electron/main.js",
   "scripts": {
     "dev": "vite",
     "dev:electron": "node scripts/electron-dev.js",
@@ -19,6 +19,7 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.1.18",
     "@types/node": "^25.1.0",
     "@types/react": "^19.2.10",
     "@types/react-dom": "^19.2.3",

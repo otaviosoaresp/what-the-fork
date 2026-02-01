@@ -44,7 +44,7 @@ function buildSideBySideLines(file: DiffFile): SideBySideLine[] {
   return result
 }
 
-export function SplitView({ file }: SplitViewProps): JSX.Element {
+export function SplitView({ file }: SplitViewProps) {
   const lines = buildSideBySideLines(file)
 
   return (

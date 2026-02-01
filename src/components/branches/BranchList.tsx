@@ -4,7 +4,7 @@ import { useDiffStore } from '@/stores/diff'
 import { BranchItem } from './BranchItem'
 import { CreateBranchDialog } from './CreateBranchDialog'
 
-export function BranchList(): JSX.Element {
+export function BranchList() {
   const { branches, loadBranches, isLoading } = useBranchesStore()
   const { setMode, clearDiff } = useDiffStore()
   const [showCreateDialog, setShowCreateDialog] = useState(false)

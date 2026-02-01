@@ -5,7 +5,7 @@ import { MainPanel } from './components/layout/MainPanel'
 import { Header } from './components/layout/Header'
 import { WelcomeScreen } from './components/WelcomeScreen'
 
-export default function App(): JSX.Element {
+export default function App() {
   const { repoPath, loadRepository } = useRepositoryStore()
 
   useEffect(() => {

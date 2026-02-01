@@ -5,7 +5,7 @@ interface CreateBranchDialogProps {
   onClose: () => void
 }
 
-export function CreateBranchDialog({ onClose }: CreateBranchDialogProps): JSX.Element {
+export function CreateBranchDialog({ onClose }: CreateBranchDialogProps) {
   const [name, setName] = useState('')
   const [isCreating, setIsCreating] = useState(false)
   const { createBranch } = useBranchesStore()

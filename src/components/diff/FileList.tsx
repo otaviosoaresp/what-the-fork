@@ -7,7 +7,7 @@ interface FileListProps {
   selectedFile: DiffFile | null
 }
 
-export function FileList({ files, selectedFile }: FileListProps): JSX.Element {
+export function FileList({ files, selectedFile }: FileListProps) {
   const { selectFile } = useDiffStore()
 
   return (
