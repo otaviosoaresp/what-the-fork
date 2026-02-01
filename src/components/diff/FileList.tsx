@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useDiffStore } from '@/stores/diff'
 import { useUIStore } from '@/stores/ui'
 import { cn } from '@/lib/utils'
@@ -13,9 +13,16 @@ export function FileList({ files, selectedFile }: FileListProps) {
   const { selectFile } = useDiffStore()
   const { fileListHeight, setFileListHeight } = useUIStore()
   const [isDragging, setIsDragging] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
   const containerRef = useRef<HTMLDivElement>(null)
   const startYRef = useRef(0)
   const startHeightRef = useRef(0)
+
+  const filteredFiles = useMemo(() => {
+    if (!searchQuery.trim()) return files
+    const query = searchQuery.toLowerCase()
+    return files.filter(f => f.path.toLowerCase().includes(query))
+  }, [files, searchQuery])
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
@@ -61,14 +68,44 @@ export function FileList({ files, selectedFile }: FileListProps) {
           isDragging && 'bg-accent'
         )} />
       </div>
-      <div className="px-4 py-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-        Files Changed ({files.length})
+      <div className="px-4 py-1.5 flex items-center gap-3">
+        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+          Files Changed ({files.length})
+        </span>
+        <div className="relative flex-1 max-w-xs">
+          <svg className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="8" />
+            <path d="M21 21l-4.35-4.35" />
+          </svg>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search files..."
+            className="w-full pl-7 pr-7 py-1 text-xs bg-muted/50 border border-border rounded focus:outline-none focus:ring-1 focus:ring-accent"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+          )}
+        </div>
+        {searchQuery && filteredFiles.length !== files.length && (
+          <span className="text-xs text-muted-foreground">
+            {filteredFiles.length} found
+          </span>
+        )}
       </div>
       <div
         className="overflow-y-auto"
         style={{ height: `${fileListHeight}px` }}
       >
-        {files.map(file => (
+        {filteredFiles.map(file => (
           <button
             key={file.path}
             onClick={() => selectFile(file)}

@@ -1,6 +1,7 @@
 import { useDiffStore } from '@/stores/diff'
 import { useUIStore } from '@/stores/ui'
 import { DiffView } from '@/components/diff/DiffView'
+import { DiffHeader } from '@/components/diff/DiffHeader'
 import { FileList } from '@/components/diff/FileList'
 import { ComparisonHeader } from '@/components/branches/ComparisonHeader'
 
@@ -57,6 +58,7 @@ export function MainPanel() {
   return (
     <main className="flex-1 flex flex-col overflow-hidden">
       <ComparisonHeader />
+      <DiffHeader />
       <div className="flex-1 overflow-hidden">
         {selectedFile && <DiffView file={selectedFile} viewMode={diffViewMode} />}
       </div>

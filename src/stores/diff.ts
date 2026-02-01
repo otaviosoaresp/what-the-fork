@@ -21,6 +21,8 @@ interface DiffState {
   loadUnstagedDiff: () => Promise<void>
   loadCommitDiff: (commit: Commit) => Promise<void>
   selectFile: (file: DiffFile | null) => void
+  selectNextFile: () => void
+  selectPreviousFile: () => void
   clearDiff: () => void
 }
 
@@ -108,6 +110,24 @@ export const useDiffStore = create<DiffState>((set) => ({
 
   selectFile: (file: DiffFile | null) => {
     set({ selectedFile: file })
+  },
+
+  selectNextFile: () => {
+    set((state) => {
+      if (!state.selectedFile || state.files.length === 0) return state
+      const currentIndex = state.files.findIndex(f => f.path === state.selectedFile?.path)
+      if (currentIndex === -1 || currentIndex >= state.files.length - 1) return state
+      return { selectedFile: state.files[currentIndex + 1] }
+    })
+  },
+
+  selectPreviousFile: () => {
+    set((state) => {
+      if (!state.selectedFile || state.files.length === 0) return state
+      const currentIndex = state.files.findIndex(f => f.path === state.selectedFile?.path)
+      if (currentIndex <= 0) return state
+      return { selectedFile: state.files[currentIndex - 1] }
+    })
   },
 
   clearDiff: () => {
