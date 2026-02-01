@@ -6,7 +6,8 @@ const AVAILABLE_MODELS = [
   { id: 'anthropic/claude-3.5-sonnet', name: 'Claude 3.5 Sonnet' },
   { id: 'openai/gpt-4o-mini', name: 'GPT-4o Mini' },
   { id: 'openai/gpt-4o', name: 'GPT-4o' },
-  { id: 'google/gemini-pro', name: 'Gemini Pro' }
+  { id: 'google/gemini-pro', name: 'Gemini Pro' },
+  { id: 'x-ai/grok-code-fast-1', name: 'Grok Code Fast' }
 ]
 
 export function AISettings() {
