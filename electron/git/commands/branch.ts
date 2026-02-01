@@ -3,7 +3,7 @@ import { parseBranches } from '../parser'
 import type { Branch } from '../types'
 
 export async function listBranches(repoPath: string): Promise<Branch[]> {
-  const result = await executeGit(repoPath, ['branch', '-a'])
+  const result = await executeGit(repoPath, ['branch', '-a', '--sort=-committerdate'])
   if (result.exitCode !== 0) throw new Error(result.stderr)
   return parseBranches(result.stdout)
 }

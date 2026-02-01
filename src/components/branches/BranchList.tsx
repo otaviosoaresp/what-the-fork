@@ -6,6 +6,8 @@ import { useUIStore } from '@/stores/ui'
 import { BranchItem } from './BranchItem'
 import { CreateBranchDialog } from './CreateBranchDialog'
 
+const PAGE_SIZE = 10
+
 export function BranchList() {
   const { branches, loadBranches, isLoading } = useBranchesStore()
   const { baseBranch, setBaseBranch, setMode, clearDiff } = useDiffStore()
@@ -13,11 +15,17 @@ export function BranchList() {
   const { toggleFavoriteBranch, favoriteBranches: allFavorites } = useUIStore()
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [showAllRemote, setShowAllRemote] = useState(false)
+  const [localVisibleCount, setLocalVisibleCount] = useState(PAGE_SIZE)
+  const [remoteVisibleCount, setRemoteVisibleCount] = useState(PAGE_SIZE)
 
   useEffect(() => {
     loadBranches()
   }, [loadBranches])
+
+  useEffect(() => {
+    setLocalVisibleCount(PAGE_SIZE)
+    setRemoteVisibleCount(PAGE_SIZE)
+  }, [searchQuery])
 
   const favoriteBranchNames = useMemo(() => {
     return repoPath ? (allFavorites[repoPath] || []) : []
@@ -45,10 +53,24 @@ export function BranchList() {
     return localBranches.filter(b => !favoriteBranchNames.includes(b.name))
   }, [localBranches, favoriteBranchNames])
 
+  const nonFavoriteRemoteBranches = useMemo(() => {
+    return remoteBranches.filter(b => !favoriteBranchNames.includes(b.name))
+  }, [remoteBranches, favoriteBranchNames])
+
+  const displayedLocalBranches = useMemo(() => {
+    if (searchQuery.trim()) return nonFavoriteLocalBranches
+    return nonFavoriteLocalBranches.slice(0, localVisibleCount)
+  }, [nonFavoriteLocalBranches, localVisibleCount, searchQuery])
+
   const displayedRemoteBranches = useMemo(() => {
-    if (showAllRemote || searchQuery.trim()) return remoteBranches
-    return remoteBranches.slice(0, 5)
-  }, [remoteBranches, showAllRemote, searchQuery])
+    if (searchQuery.trim()) return nonFavoriteRemoteBranches
+    return nonFavoriteRemoteBranches.slice(0, remoteVisibleCount)
+  }, [nonFavoriteRemoteBranches, remoteVisibleCount, searchQuery])
+
+  const hasMoreLocal = !searchQuery.trim() && nonFavoriteLocalBranches.length > localVisibleCount
+  const hasMoreRemote = !searchQuery.trim() && nonFavoriteRemoteBranches.length > remoteVisibleCount
+  const remainingLocal = nonFavoriteLocalBranches.length - localVisibleCount
+  const remainingRemote = nonFavoriteRemoteBranches.length - remoteVisibleCount
 
   const handleSetBase = (branchName: string) => {
     if (baseBranch === branchName) {
@@ -96,8 +118,8 @@ export function BranchList() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Filter branches..."
-            className="w-full pl-7 pr-2 py-1 text-xs bg-muted/50 border border-border rounded focus:outline-none focus:ring-1 focus:ring-accent"
+            placeholder="Search branches..."
+            className="w-full pl-7 pr-7 py-1 text-xs bg-muted/50 border border-border rounded focus:outline-none focus:ring-1 focus:ring-accent"
           />
           {searchQuery && (
             <button
@@ -135,11 +157,13 @@ export function BranchList() {
         </>
       )}
 
-      {nonFavoriteLocalBranches.length > 0 && (
+      {(displayedLocalBranches.length > 0 || hasMoreLocal) && (
         <>
-          <div className="px-3 py-1 text-xs text-muted-foreground">Local</div>
+          <div className="px-3 py-1 text-xs text-muted-foreground">
+            Local ({localBranches.length})
+          </div>
           <div className="space-y-0.5">
-            {nonFavoriteLocalBranches.map(branch => (
+            {displayedLocalBranches.map(branch => (
               <BranchItem
                 key={branch.name}
                 branch={branch}
@@ -150,40 +174,41 @@ export function BranchList() {
               />
             ))}
           </div>
+          {hasMoreLocal && (
+            <button
+              onClick={() => setLocalVisibleCount(prev => prev + PAGE_SIZE)}
+              className="w-full px-3 py-1.5 text-xs text-accent hover:bg-muted transition-colors"
+            >
+              Show {Math.min(PAGE_SIZE, remainingLocal)} more
+            </button>
+          )}
         </>
       )}
 
-      {remoteBranches.length > 0 && (
+      {(displayedRemoteBranches.length > 0 || hasMoreRemote) && (
         <>
-          <div className="px-3 py-1 text-xs text-muted-foreground flex items-center justify-between">
-            <span>Remote ({remoteBranches.length})</span>
-            {remoteBranches.length > 5 && !searchQuery && (
-              <button
-                onClick={() => setShowAllRemote(!showAllRemote)}
-                className="text-accent hover:underline"
-              >
-                {showAllRemote ? 'Show less' : `Show all`}
-              </button>
-            )}
+          <div className="px-3 py-1 text-xs text-muted-foreground mt-2">
+            Remote ({remoteBranches.length})
           </div>
-          <div className={showAllRemote && !searchQuery ? 'max-h-48 overflow-y-auto' : ''}>
-            <div className="space-y-0.5">
-              {displayedRemoteBranches.map(branch => (
-                <BranchItem
-                  key={branch.name}
-                  branch={branch}
-                  isBase={baseBranch === branch.name}
-                  isFavorite={favoriteBranchNames.includes(branch.name)}
-                  onSetBase={() => handleSetBase(branch.name)}
-                  onToggleFavorite={() => handleToggleFavorite(branch.name)}
-                />
-              ))}
-            </div>
+          <div className="space-y-0.5">
+            {displayedRemoteBranches.map(branch => (
+              <BranchItem
+                key={branch.name}
+                branch={branch}
+                isBase={baseBranch === branch.name}
+                isFavorite={favoriteBranchNames.includes(branch.name)}
+                onSetBase={() => handleSetBase(branch.name)}
+                onToggleFavorite={() => handleToggleFavorite(branch.name)}
+              />
+            ))}
           </div>
-          {!showAllRemote && remoteBranches.length > 5 && !searchQuery && (
-            <div className="px-3 py-1 text-xs text-muted-foreground">
-              +{remoteBranches.length - 5} more
-            </div>
+          {hasMoreRemote && (
+            <button
+              onClick={() => setRemoteVisibleCount(prev => prev + PAGE_SIZE)}
+              className="w-full px-3 py-1.5 text-xs text-accent hover:bg-muted transition-colors"
+            >
+              Show {Math.min(PAGE_SIZE, remainingRemote)} more
+            </button>
           )}
         </>
       )}

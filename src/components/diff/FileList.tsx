@@ -19,6 +19,7 @@ export function FileList({ files, selectedFile }: FileListProps) {
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
+    e.stopPropagation()
     setIsDragging(true)
     startYRef.current = e.clientY
     startHeightRef.current = fileListHeight
@@ -47,21 +48,25 @@ export function FileList({ files, selectedFile }: FileListProps) {
   }, [isDragging, setFileListHeight])
 
   return (
-    <div ref={containerRef} className="border-t border-border bg-background/50 flex flex-col">
+    <div ref={containerRef} className="border-t border-border bg-background/50 flex-shrink-0">
       <div
         onMouseDown={handleMouseDown}
         className={cn(
-          'h-1 cursor-ns-resize hover:bg-accent/50 transition-colors flex-shrink-0',
-          isDragging && 'bg-accent'
+          'h-2 cursor-ns-resize flex items-center justify-center group hover:bg-muted/50',
+          isDragging && 'bg-accent/30'
         )}
-      />
-      <div className="px-4 py-2 flex items-center justify-between text-xs font-medium text-muted-foreground uppercase tracking-wider flex-shrink-0">
-        <span>Files Changed ({files.length})</span>
-        <span className="text-[10px] normal-case">drag to resize</span>
+      >
+        <div className={cn(
+          'w-12 h-1 rounded-full bg-muted-foreground/30 group-hover:bg-accent transition-colors',
+          isDragging && 'bg-accent'
+        )} />
+      </div>
+      <div className="px-4 py-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+        Files Changed ({files.length})
       </div>
       <div
-        className="overflow-y-auto flex-1"
-        style={{ height: fileListHeight }}
+        className="overflow-y-auto"
+        style={{ height: `${fileListHeight}px` }}
       >
         {files.map(file => (
           <button
