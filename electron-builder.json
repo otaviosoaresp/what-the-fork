@@ -1,0 +1,22 @@
+{
+  "appId": "com.gitbranchviewer.app",
+  "productName": "Git Branch Viewer",
+  "directories": {
+    "output": "release"
+  },
+  "files": [
+    "dist/**/*",
+    "dist-electron/**/*"
+  ],
+  "linux": {
+    "target": ["AppImage", "deb"],
+    "category": "Development"
+  },
+  "mac": {
+    "target": ["dmg"],
+    "category": "public.app-category.developer-tools"
+  },
+  "win": {
+    "target": ["nsis"]
+  }
+}
