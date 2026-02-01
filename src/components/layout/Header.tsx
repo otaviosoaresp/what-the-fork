@@ -126,8 +126,8 @@ export function Header() {
           <>
             <div className="fixed inset-0 z-40" onClick={() => setShowRepoMenu(false)} />
             <div
-              className="fixed w-72 bg-popover border border-border rounded-lg shadow-lg z-50 py-1"
-              style={{ top: menuPosition.top, left: menuPosition.left }}
+              className="fixed w-72 border border-border rounded-lg shadow-lg z-50 py-1"
+              style={{ top: menuPosition.top, left: menuPosition.left, backgroundColor: '#0f172a' }}
             >
               {otherRepos.length > 0 && (
                 <>
