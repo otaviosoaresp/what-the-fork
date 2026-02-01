@@ -70,7 +70,11 @@ export function BranchList() {
     if (sortOption === 'name') {
       return [...filtered].sort((a, b) => a.name.localeCompare(b.name))
     }
-    return filtered
+    return [...filtered].sort((a, b) => {
+      const dateA = a.lastCommitDate ? new Date(a.lastCommitDate).getTime() : 0
+      const dateB = b.lastCommitDate ? new Date(b.lastCommitDate).getTime() : 0
+      return dateB - dateA
+    })
   }, [localBranches, favoriteBranchNames, sortOption])
 
   const nonFavoriteRemoteBranches = useMemo(() => {
