@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useRepositoryStore } from '@/stores/repository'
 import { useBranchesStore } from '@/stores/branches'
 import { useUIStore } from '@/stores/ui'
@@ -14,11 +15,20 @@ export function Header() {
   const [isPushing, setIsPushing] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [showRepoMenu, setShowRepoMenu] = useState(false)
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 })
+  const repoButtonRef = useRef<HTMLButtonElement>(null)
   const { repoName, remoteStatus, repoPath, loadRepository } = useRepositoryStore()
   const addToast = useToastStore((s) => s.addToast)
   const { diffViewMode, setDiffViewMode, recentRepositories, addRecentRepository } = useUIStore()
 
   const otherRepos = recentRepositories.filter(p => p !== repoPath)
+
+  useEffect(() => {
+    if (showRepoMenu && repoButtonRef.current) {
+      const rect = repoButtonRef.current.getBoundingClientRect()
+      setMenuPosition({ top: rect.bottom + 4, left: rect.left })
+    }
+  }, [showRepoMenu])
 
   const handleFetch = async () => {
     if (!repoPath || isFetching) return
@@ -96,8 +106,9 @@ export function Header() {
 
   return (
     <header className="h-12 flex items-center justify-between px-4 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="relative flex items-center gap-2">
+      <div className="flex items-center gap-2">
         <button
+          ref={repoButtonRef}
           onClick={() => setShowRepoMenu(!showRepoMenu)}
           className="flex items-center gap-2 px-2 py-1 -mx-2 rounded hover:bg-muted transition-colors"
         >
@@ -111,10 +122,13 @@ export function Header() {
           </svg>
         </button>
 
-        {showRepoMenu && (
+        {showRepoMenu && createPortal(
           <>
             <div className="fixed inset-0 z-40" onClick={() => setShowRepoMenu(false)} />
-            <div className="absolute top-full left-0 mt-1 w-72 bg-background border border-border rounded-lg shadow-lg z-50 py-1">
+            <div
+              className="fixed w-72 bg-popover border border-border rounded-lg shadow-lg z-50 py-1"
+              style={{ top: menuPosition.top, left: menuPosition.left }}
+            >
               {otherRepos.length > 0 && (
                 <>
                   <div className="px-3 py-1.5 text-xs font-medium text-muted-foreground uppercase">
@@ -146,7 +160,8 @@ export function Header() {
                 Open Repository...
               </button>
             </div>
-          </>
+          </>,
+          document.body
         )}
       </div>
 
