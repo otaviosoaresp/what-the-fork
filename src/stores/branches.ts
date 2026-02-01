@@ -64,11 +64,7 @@ export const useBranchesStore = create<BranchesState>((set, get) => ({
     const repoPath = useRepositoryStore.getState().repoPath
     if (!repoPath) return
 
-    try {
-      await window.electron.git.branches.delete(repoPath, branchName, force)
-      await get().loadBranches()
-    } catch (error) {
-      set({ error: error instanceof Error ? error.message : 'Failed to delete branch' })
-    }
+    await window.electron.git.branches.delete(repoPath, branchName, force)
+    await get().loadBranches()
   }
 }))

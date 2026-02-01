@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useBranchesStore } from '@/stores/branches'
 import { useDiffStore } from '@/stores/diff'
 import { useRepositoryStore } from '@/stores/repository'
+import { useToastStore } from '@/stores/toast'
 import { cn } from '@/lib/utils'
 import type { Branch } from '../../../electron/git/types'
 
@@ -17,6 +18,7 @@ export function BranchItem({ branch, isBase, isFavorite, onSetBase, onToggleFavo
   const { checkout, deleteBranch } = useBranchesStore()
   const { compareBranches, baseBranch } = useDiffStore()
   const { currentBranch } = useRepositoryStore()
+  const addToast = useToastStore((s) => s.addToast)
   const [showActions, setShowActions] = useState(false)
 
   const isCurrent = branch.name === currentBranch
@@ -31,13 +33,34 @@ export function BranchItem({ branch, isBase, isFavorite, onSetBase, onToggleFavo
 
   const handleCheckout = async (e: React.MouseEvent) => {
     e.stopPropagation()
-    await checkout(branch.name)
+    try {
+      await checkout(branch.name)
+    } catch (error) {
+      addToast(error instanceof Error ? error.message : 'Checkout failed', 'error')
+    }
   }
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation()
-    if (confirm(`Delete branch "${branch.name}"?`)) {
-      await deleteBranch(branch.name)
+    if (!confirm(`Delete branch "${branch.name}"?`)) return
+
+    try {
+      await deleteBranch(branch.name, false)
+      addToast(`Branch "${branch.name}" deleted`, 'success')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : ''
+      if (message.includes('not fully merged')) {
+        if (confirm(`Branch "${branch.name}" is not fully merged. Force delete?`)) {
+          try {
+            await deleteBranch(branch.name, true)
+            addToast(`Branch "${branch.name}" force deleted`, 'success')
+          } catch (forceError) {
+            addToast(forceError instanceof Error ? forceError.message : 'Force delete failed', 'error')
+          }
+        }
+      } else {
+        addToast(message || 'Delete failed', 'error')
+      }
     }
   }
 
