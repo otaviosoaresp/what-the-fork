@@ -23,6 +23,7 @@ export function Header() {
     try {
       await window.electron.git.fetch(repoPath)
       await useRepositoryStore.getState().refreshRemoteStatus()
+      await useBranchesStore.getState().loadBranches()
       addToast('Fetch completed', 'success')
     } catch (error) {
       addToast(error instanceof Error ? error.message : 'Fetch failed', 'error')
@@ -38,6 +39,7 @@ export function Header() {
       await window.electron.git.pull(repoPath)
       await useRepositoryStore.getState().refreshStatus()
       await useRepositoryStore.getState().refreshRemoteStatus()
+      await useBranchesStore.getState().loadBranches()
       addToast('Pull completed', 'success')
     } catch (error) {
       addToast(error instanceof Error ? error.message : 'Pull failed', 'error')
