@@ -51,4 +51,5 @@ export interface DiffLine {
 export interface RemoteStatus {
   ahead: number
   behind: number
+  hasUpstream: boolean
 }

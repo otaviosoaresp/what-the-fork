@@ -30,5 +30,12 @@ contextBridge.exposeInMainWorld('electron', {
     pull: (repoPath: string) => ipcRenderer.invoke('git:pull', repoPath),
     push: (repoPath: string) => ipcRenderer.invoke('git:push', repoPath),
     remoteStatus: (repoPath: string) => ipcRenderer.invoke('git:remoteStatus', repoPath)
+  },
+  ai: {
+    generateCommitMessage: (repoPath: string) => ipcRenderer.invoke('ai:generate-commit-message', repoPath),
+    setConfig: (config: { apiKey?: string; model?: string }) => ipcRenderer.invoke('ai:set-config', config),
+    getConfig: () => ipcRenderer.invoke('ai:get-config'),
+    clearConfig: () => ipcRenderer.invoke('ai:clear-config'),
+    testConnection: () => ipcRenderer.invoke('ai:test-connection')
   }
 })
