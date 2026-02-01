@@ -1,6 +1,6 @@
 {
   "appId": "com.gitbranchviewer.app",
-  "productName": "Git Branch Viewer",
+  "productName": "What the Fork",
   "directories": {
     "output": "release"
   },

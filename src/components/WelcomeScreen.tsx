@@ -26,7 +26,7 @@ export function WelcomeScreen() {
             <circle cx="12" cy="12" r="3" />
             <path d="M12 3v6M12 15v6M3 12h6M15 12h6" />
           </svg>
-          <h1 className="text-2xl font-semibold mb-2">Git Branch Viewer</h1>
+          <h1 className="text-2xl font-semibold mb-2">What the Fork</h1>
           <p className="text-muted-foreground text-sm">View diffs and manage your git repositories</p>
         </div>
 

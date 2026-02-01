@@ -1,7 +1,7 @@
 {
-  "name": "git-branch-viewer",
+  "name": "what-the-fork",
   "version": "0.1.0",
-  "description": "Git desktop client for diff visualization",
+  "description": "What the Fork - Git desktop client for diff visualization",
   "main": "dist-electron/electron/main.js",
   "scripts": {
     "dev": "vite",

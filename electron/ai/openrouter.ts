@@ -46,7 +46,7 @@ export async function generateCommitMessage(repoPath: string): Promise<GenerateC
       'Authorization': `Bearer ${config.apiKey}`,
       'Content-Type': 'application/json',
       'HTTP-Referer': 'https://github.com/git-branch-viewer',
-      'X-Title': 'Git Branch Viewer'
+      'X-Title': 'What the Fork'
     },
     body: JSON.stringify({
       model: config.model,
@@ -96,7 +96,7 @@ export async function testConnection(): Promise<boolean> {
       'Authorization': `Bearer ${config.apiKey}`,
       'Content-Type': 'application/json',
       'HTTP-Referer': 'https://github.com/git-branch-viewer',
-      'X-Title': 'Git Branch Viewer'
+      'X-Title': 'What the Fork'
     },
     body: JSON.stringify({
       model: config.model,
