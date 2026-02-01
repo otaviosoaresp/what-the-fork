@@ -24,9 +24,11 @@ export function parseBranches(output: string): Branch[] {
 export function parseLog(output: string): Commit[] {
   if (!output.trim()) return []
 
-  return output.split('\n').map(line => {
+  const commits: Commit[] = []
+
+  for (const line of output.split('\n')) {
     const parts = line.split('|')
-    if (parts.length < 4) return null
+    if (parts.length < 4) continue
 
     const hash = parts[0]
     const message = parts[1]
@@ -40,15 +42,17 @@ export function parseLog(output: string): Commit[] {
       .filter(r => r && !r.includes('HEAD') && !r.includes('->'))
       .map(r => r.replace('origin/', ''))
 
-    return {
+    commits.push({
       hash,
       shortHash: hash.substring(0, 7),
       message,
       author,
       date,
       refs: refs.length > 0 ? refs : undefined
-    }
-  }).filter((c): c is Commit => c !== null)
+    })
+  }
+
+  return commits
 }
 
 export function parseStatus(output: string): FileStatus[] {
