@@ -10,7 +10,7 @@ export function BranchList() {
   const { branches, loadBranches, isLoading } = useBranchesStore()
   const { baseBranch, setBaseBranch, setMode, clearDiff } = useDiffStore()
   const { repoPath } = useRepositoryStore()
-  const { toggleFavoriteBranch, getFavoriteBranches } = useUIStore()
+  const { toggleFavoriteBranch, favoriteBranches: allFavorites } = useUIStore()
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [showAllRemote, setShowAllRemote] = useState(false)
@@ -20,8 +20,8 @@ export function BranchList() {
   }, [loadBranches])
 
   const favoriteBranchNames = useMemo(() => {
-    return repoPath ? getFavoriteBranches(repoPath) : []
-  }, [repoPath, getFavoriteBranches])
+    return repoPath ? (allFavorites[repoPath] || []) : []
+  }, [repoPath, allFavorites])
 
   const filteredBranches = useMemo(() => {
     if (!searchQuery.trim()) return branches
