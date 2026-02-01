@@ -17,7 +17,7 @@ A desktop Git client focused on branch comparison and diff visualization. Built 
 
 ## Screenshots
 
-*Coming soon*
+<img width="1710" height="1336" alt="image" src="https://github.com/user-attachments/assets/22f61db3-308d-4dd3-97cd-48e7909648fe" />
 
 ## Installation
 
