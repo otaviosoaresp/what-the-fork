@@ -24,6 +24,24 @@ export async function getRemoteStatus(repoPath: string): Promise<RemoteStatus> {
     '--count',
     'HEAD...@{upstream}'
   ])
-  if (result.exitCode !== 0) return { ahead: 0, behind: 0 }
-  return parseRemoteStatus(result.stdout)
+
+  if (result.exitCode !== 0) {
+    const localCommits = await countLocalCommits(repoPath)
+    return { ahead: localCommits, behind: 0, hasUpstream: false }
+  }
+
+  const status = parseRemoteStatus(result.stdout)
+  return { ...status, hasUpstream: true }
+}
+
+async function countLocalCommits(repoPath: string): Promise<number> {
+  const result = await executeGit(repoPath, [
+    'rev-list',
+    '--count',
+    'HEAD',
+    '--not',
+    '--remotes'
+  ])
+  if (result.exitCode !== 0) return 0
+  return parseInt(result.stdout.trim()) || 0
 }

@@ -27,7 +27,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
   repoName: null,
   currentBranch: null,
   status: [],
-  remoteStatus: { ahead: 0, behind: 0 },
+  remoteStatus: { ahead: 0, behind: 0, hasUpstream: false },
   isLoading: false,
   error: null,
 
@@ -66,7 +66,7 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
       repoName: null,
       currentBranch: null,
       status: [],
-      remoteStatus: { ahead: 0, behind: 0 },
+      remoteStatus: { ahead: 0, behind: 0, hasUpstream: false },
       error: null
     })
   },

@@ -17,8 +17,8 @@ interface DiffState {
   setMode: (mode: DiffMode) => void
   setBaseBranch: (branch: string | null) => void
   compareBranches: (baseBranch: string, compareBranch: string) => Promise<void>
-  loadStagedDiff: () => Promise<void>
-  loadUnstagedDiff: () => Promise<void>
+  loadStagedDiff: (targetPath?: string) => Promise<void>
+  loadUnstagedDiff: (targetPath?: string) => Promise<void>
   loadCommitDiff: (commit: Commit) => Promise<void>
   selectFile: (file: DiffFile | null) => void
   selectNextFile: () => void
@@ -61,14 +61,15 @@ export const useDiffStore = create<DiffState>((set, get) => ({
     }
   },
 
-  loadStagedDiff: async () => {
+  loadStagedDiff: async (targetPath?: string) => {
     const repoPath = useRepositoryStore.getState().repoPath
     if (!repoPath) return
 
     set({ isLoading: true, error: null, mode: 'staged' })
     try {
       const files = await window.electron.git.diff.staged(repoPath)
-      set({ files, selectedFile: files[0] ?? null, isLoading: false })
+      const targetFile = targetPath ? files.find(f => f.path === targetPath) : undefined
+      set({ files, selectedFile: targetFile ?? files[0] ?? null, isLoading: false })
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : 'Failed to load staged diff',
@@ -77,14 +78,15 @@ export const useDiffStore = create<DiffState>((set, get) => ({
     }
   },
 
-  loadUnstagedDiff: async () => {
+  loadUnstagedDiff: async (targetPath?: string) => {
     const repoPath = useRepositoryStore.getState().repoPath
     if (!repoPath) return
 
     set({ isLoading: true, error: null, mode: 'unstaged' })
     try {
       const files = await window.electron.git.diff.unstaged(repoPath)
-      set({ files, selectedFile: files[0] ?? null, isLoading: false })
+      const targetFile = targetPath ? files.find(f => f.path === targetPath) : undefined
+      set({ files, selectedFile: targetFile ?? files[0] ?? null, isLoading: false })
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : 'Failed to load unstaged diff',

@@ -45,9 +45,9 @@ export function FileItem({ file }: FileItemProps) {
 
   const handleClick = async () => {
     if (file.staged) {
-      await loadStagedDiff()
+      await loadStagedDiff(file.path)
     } else {
-      await loadUnstagedDiff()
+      await loadUnstagedDiff(file.path)
     }
   }
 
