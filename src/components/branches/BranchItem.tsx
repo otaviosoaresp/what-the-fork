@@ -8,10 +8,12 @@ import type { Branch } from '../../../electron/git/types'
 interface BranchItemProps {
   branch: Branch
   isBase?: boolean
+  isFavorite?: boolean
   onSetBase?: () => void
+  onToggleFavorite?: () => void
 }
 
-export function BranchItem({ branch, isBase, onSetBase }: BranchItemProps) {
+export function BranchItem({ branch, isBase, isFavorite, onSetBase, onToggleFavorite }: BranchItemProps) {
   const { checkout, deleteBranch } = useBranchesStore()
   const { compareBranches, baseBranch } = useDiffStore()
   const { currentBranch } = useRepositoryStore()
@@ -39,6 +41,11 @@ export function BranchItem({ branch, isBase, onSetBase }: BranchItemProps) {
     }
   }
 
+  const handleToggleFavorite = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    onToggleFavorite?.()
+  }
+
   return (
     <div
       className={cn(
@@ -50,20 +57,34 @@ export function BranchItem({ branch, isBase, onSetBase }: BranchItemProps) {
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
     >
-      {isCurrent && (
+      {isFavorite && (
+        <svg className="w-3 h-3 text-yellow-500 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+        </svg>
+      )}
+      {isCurrent && !isFavorite && (
         <svg className="w-3 h-3 text-success flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
           <circle cx="12" cy="12" r="6" />
         </svg>
       )}
-      {branch.remote && (
+      {branch.remote && !isFavorite && !isCurrent && (
         <svg className="w-3 h-3 text-muted-foreground flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3" />
         </svg>
       )}
       <span className="truncate flex-1">{branch.name}</span>
-      {showActions && !isCurrent && (
+      {showActions && (
         <div className="flex items-center gap-1">
-          {!branch.remote && (
+          <button
+            onClick={handleToggleFavorite}
+            className={cn('p-1 rounded hover:bg-background', isFavorite ? 'text-yellow-500' : 'text-muted-foreground')}
+            title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+          >
+            <svg className="w-3 h-3" viewBox="0 0 24 24" fill={isFavorite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+            </svg>
+          </button>
+          {!branch.remote && !isCurrent && (
             <button
               onClick={handleCheckout}
               className="p-1 rounded hover:bg-background"
