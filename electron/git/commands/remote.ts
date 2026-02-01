@@ -15,10 +15,10 @@ export async function pull(repoPath: string): Promise<void> {
     if (branchResult.exitCode !== 0) throw new Error(branchResult.stderr)
 
     const currentBranch = branchResult.stdout.trim()
-    const result = await executeGit(repoPath, ['pull', 'origin', currentBranch])
+    const result = await executeGit(repoPath, ['pull', '--rebase', 'origin', currentBranch])
     if (result.exitCode !== 0) throw new Error(result.stderr)
   } else {
-    const result = await executeGit(repoPath, ['pull'])
+    const result = await executeGit(repoPath, ['pull', '--rebase'])
     if (result.exitCode !== 0) throw new Error(result.stderr)
   }
 }
