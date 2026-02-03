@@ -15,6 +15,13 @@
   --color-destructive: #ef4444;
   --color-success: #22c55e;
   --color-warning: #f59e0b;
+
+  --color-diff-removed-bg: #1e3a5f;
+  --color-diff-removed-border: #3b82f6;
+  --color-diff-removed-word: #2d5a87;
+  --color-diff-added-bg: #5f3a1e;
+  --color-diff-added-border: #f59e0b;
+  --color-diff-added-word: #87652d;
 }
 
 @layer base {
