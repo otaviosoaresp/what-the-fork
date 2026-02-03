@@ -1,4 +1,5 @@
 import { loader, type Monaco } from '@monaco-editor/react'
+import { useState, useEffect } from 'react'
 
 export interface SyntaxToken {
   text: string
@@ -8,6 +9,8 @@ export interface SyntaxToken {
 const tokenTypeToClass: Record<string, string> = {
   keyword: 'text-purple-400',
   'keyword.control': 'text-purple-400',
+  'keyword.operator': 'text-purple-400',
+  'keyword.operator.new': 'text-purple-400',
   string: 'text-amber-300',
   'string.quoted': 'text-amber-300',
   number: 'text-teal-300',
@@ -16,11 +19,14 @@ const tokenTypeToClass: Record<string, string> = {
   'comment.block': 'text-slate-500 italic',
   type: 'text-cyan-400',
   'type.identifier': 'text-cyan-400',
+  identifier: 'text-foreground',
+  'identifier.type': 'text-cyan-400',
   function: 'text-blue-400',
   variable: 'text-foreground',
   operator: 'text-slate-300',
   delimiter: 'text-slate-400',
   'delimiter.bracket': 'text-slate-400',
+  'delimiter.parenthesis': 'text-slate-400',
 }
 
 function getClassForTokenType(tokenType: string): string {
@@ -41,8 +47,9 @@ function getClassForTokenType(tokenType: string): string {
 
 let monacoInstance: Monaco | null = null
 let initPromise: Promise<Monaco> | null = null
+const listeners: Set<() => void> = new Set()
 
-async function getMonaco(): Promise<Monaco> {
+async function loadMonaco(): Promise<Monaco> {
   if (monacoInstance) {
     return monacoInstance
   }
@@ -50,6 +57,7 @@ async function getMonaco(): Promise<Monaco> {
   if (!initPromise) {
     initPromise = loader.init().then((monaco) => {
       monacoInstance = monaco
+      listeners.forEach((listener) => listener())
       return monaco
     })
   }
@@ -57,9 +65,30 @@ async function getMonaco(): Promise<Monaco> {
   return initPromise
 }
 
+export function useMonacoReady(): boolean {
+  const [ready, setReady] = useState(monacoInstance !== null)
+
+  useEffect(() => {
+    if (monacoInstance) {
+      setReady(true)
+      return
+    }
+
+    const listener = () => setReady(true)
+    listeners.add(listener)
+    loadMonaco()
+
+    return () => {
+      listeners.delete(listener)
+    }
+  }, [])
+
+  return ready
+}
+
 export function tokenizeLine(content: string, languageId: string): SyntaxToken[] {
   if (!monacoInstance) {
-    getMonaco()
+    loadMonaco()
     return [{ text: content, className: 'text-foreground' }]
   }
 
@@ -95,5 +124,5 @@ export function tokenizeLine(content: string, languageId: string): SyntaxToken[]
 }
 
 export async function initializeMonaco(): Promise<void> {
-  await getMonaco()
+  await loadMonaco()
 }

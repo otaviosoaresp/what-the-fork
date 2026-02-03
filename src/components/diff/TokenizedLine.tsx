@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import { tokenizeLine, type SyntaxToken } from '@/lib/monaco-tokenizer'
+import { tokenizeLine, useMonacoReady, type SyntaxToken } from '@/lib/monaco-tokenizer'
 import { computeWordDiff, type DiffToken } from '@/lib/diff-tokens'
 import { getLanguageFromPath } from '@/lib/language-map'
 import { useMemo } from 'react'
@@ -82,6 +82,8 @@ export function TokenizedLine({
   lineType,
   pairedContent,
 }: TokenizedLineProps) {
+  const monacoReady = useMonacoReady()
+
   const tokens = useMemo(() => {
     const language = getLanguageFromPath(filePath)
     const syntaxTokens = tokenizeLine(content, language)
@@ -101,7 +103,7 @@ export function TokenizedLine({
 
     const diffTokens = lineType === 'remove' ? removed : added
     return combineTokens(syntaxTokens, diffTokens)
-  }, [content, filePath, lineType, pairedContent])
+  }, [content, filePath, lineType, pairedContent, monacoReady])
 
   return (
     <span className="whitespace-pre-wrap break-all">
