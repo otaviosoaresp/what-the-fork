@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils'
 import type { DiffFile, DiffLine } from '../../../electron/git/types'
+import { TokenizedLine } from './TokenizedLine'
 
 interface SplitViewProps {
   file: DiffFile
@@ -59,14 +60,21 @@ export function SplitView({ file }: SplitViewProps) {
               key={index}
               className={cn(
                 'flex',
-                line.left?.type === 'remove' && 'bg-destructive/10'
+                line.left?.type === 'remove' && 'bg-[var(--color-diff-removed-bg)] border-l-[3px] border-l-[var(--color-diff-removed-border)]'
               )}
             >
               <span className="w-12 px-2 text-right text-muted-foreground text-xs select-none border-r border-border">
                 {line.left?.oldLineNumber ?? ''}
               </span>
-              <pre className="flex-1 px-2 whitespace-pre-wrap break-all min-h-[1.5rem]">
-                {line.left?.content ?? ''}
+              <pre className="flex-1 px-2 min-h-[1.5rem]">
+                {line.left && (
+                  <TokenizedLine
+                    content={line.left.content}
+                    filePath={file.path}
+                    lineType={line.left.type}
+                    pairedContent={line.right?.type === 'add' ? line.right.content : undefined}
+                  />
+                )}
               </pre>
             </div>
           ))}
@@ -77,14 +85,21 @@ export function SplitView({ file }: SplitViewProps) {
               key={index}
               className={cn(
                 'flex',
-                line.right?.type === 'add' && 'bg-success/10'
+                line.right?.type === 'add' && 'bg-[var(--color-diff-added-bg)] border-l-[3px] border-l-[var(--color-diff-added-border)]'
               )}
             >
               <span className="w-12 px-2 text-right text-muted-foreground text-xs select-none border-r border-border">
                 {line.right?.newLineNumber ?? ''}
               </span>
-              <pre className="flex-1 px-2 whitespace-pre-wrap break-all min-h-[1.5rem]">
-                {line.right?.content ?? ''}
+              <pre className="flex-1 px-2 min-h-[1.5rem]">
+                {line.right && (
+                  <TokenizedLine
+                    content={line.right.content}
+                    filePath={file.path}
+                    lineType={line.right.type}
+                    pairedContent={line.left?.type === 'remove' ? line.left.content : undefined}
+                  />
+                )}
               </pre>
             </div>
           ))}
