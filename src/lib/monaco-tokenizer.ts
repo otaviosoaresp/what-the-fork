@@ -1,5 +1,8 @@
 import { loader, type Monaco } from '@monaco-editor/react'
+import * as monacoEditor from 'monaco-editor'
 import { useState, useEffect } from 'react'
+
+loader.config({ monaco: monacoEditor })
 
 export interface SyntaxToken {
   text: string
