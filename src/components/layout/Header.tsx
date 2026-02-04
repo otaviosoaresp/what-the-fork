@@ -9,6 +9,7 @@ import { useDiffStore } from '@/stores/diff'
 import { cn } from '@/lib/utils'
 import { SettingsModal } from '@/components/settings/SettingsModal'
 import { Settings, MessageSquare, Loader2 } from 'lucide-react'
+import { parseStructuredReview } from '@/lib/review-parser'
 
 export function Header() {
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -24,7 +25,7 @@ export function Header() {
   const addToast = useToastStore((s) => s.addToast)
   const { diffViewMode, setDiffViewMode, recentRepositories, addRecentRepository } = useUIStore()
   const { files, baseBranch, compareBranch, mode } = useDiffStore()
-  const { isOpen, setLoading, setContent, setError, openPanel } = useReviewStore()
+  const { isOpen, setLoading, setStructuredContent, setError, openPanel } = useReviewStore()
 
   const otherRepos = recentRepositories.filter(p => p !== repoPath)
 
@@ -118,7 +119,8 @@ export function Header() {
     setLoading(true)
     try {
       const result = await window.electron.review.reviewBranch(repoPath, baseBranch, compareBranch)
-      setContent(result.content, result.provider)
+      const structured = parseStructuredReview(result.content)
+      setStructuredContent(structured.summary, structured.comments, structured.generalNotes, result.provider)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Review failed')
     } finally {
