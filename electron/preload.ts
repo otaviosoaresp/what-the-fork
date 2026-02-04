@@ -50,5 +50,25 @@ contextBridge.exposeInMainWorld('electron', {
     resetRepoPrompt: (repoPath: string) => ipcRenderer.invoke('review:reset-repo-prompt', repoPath),
     getHistory: (repoPath: string) => ipcRenderer.invoke('review:get-history', repoPath),
     deleteHistoryEntry: (repoPath: string, timestamp: number) => ipcRenderer.invoke('review:delete-history-entry', repoPath, timestamp)
+  },
+  github: {
+    isAvailable: () => ipcRenderer.invoke('github:is-available'),
+    accounts: {
+      list: () => ipcRenderer.invoke('github:accounts:list'),
+      switch: (username: string) => ipcRenderer.invoke('github:accounts:switch', username),
+      getForRepo: (repoKey: string) => ipcRenderer.invoke('github:accounts:get-for-repo', repoKey),
+      setForRepo: (repoKey: string, username: string) => ipcRenderer.invoke('github:accounts:set-for-repo', repoKey, username)
+    },
+    pr: {
+      list: (options: { repo: string; type: 'created' | 'review-requested' | 'all' }) =>
+        ipcRenderer.invoke('github:pr:list', options),
+      forBranch: (options: { repo: string; branch: string }) =>
+        ipcRenderer.invoke('github:pr:for-branch', options)
+    },
+    issue: {
+      get: (options: { repo: string; number: number }) =>
+        ipcRenderer.invoke('github:issue:get', options)
+    },
+    openUrl: (url: string) => ipcRenderer.invoke('github:open-url', url)
   }
 })
