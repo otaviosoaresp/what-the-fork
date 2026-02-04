@@ -1,69 +1,9 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { MessageCircle, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { MarkdownContent } from '@/components/shared/MarkdownContent'
 import type { ReviewComment } from '@/types/electron'
-
-function formatMarkdown(text: string): React.ReactNode[] {
-  const parts: React.ReactNode[] = []
-  let remaining = text
-  let key = 0
-
-  while (remaining.length > 0) {
-    // Code blocks
-    const codeMatch = remaining.match(/^(.*?)`([^`]+)`(.*)$/s)
-    if (codeMatch) {
-      if (codeMatch[1]) {
-        parts.push(...formatEmphasis(codeMatch[1], key))
-        key += 10
-      }
-      parts.push(
-        <code key={`code-${key}`} className="bg-muted px-1 py-0.5 rounded text-xs font-mono">
-          {codeMatch[2]}
-        </code>
-      )
-      key++
-      remaining = codeMatch[3]
-      continue
-    }
-
-    parts.push(...formatEmphasis(remaining, key))
-    break
-  }
-
-  return parts
-}
-
-function formatEmphasis(text: string, startKey: number): React.ReactNode[] {
-  const parts: React.ReactNode[] = []
-  let remaining = text
-  let key = startKey
-
-  while (remaining.length > 0) {
-    // Bold
-    const boldMatch = remaining.match(/^(.*?)\*\*([^*]+)\*\*(.*)$/s)
-    if (boldMatch) {
-      if (boldMatch[1]) parts.push(<span key={`t-${key++}`}>{boldMatch[1]}</span>)
-      parts.push(<strong key={`b-${key++}`} className="font-semibold">{boldMatch[2]}</strong>)
-      remaining = boldMatch[3]
-      continue
-    }
-
-    // Italic
-    const italicMatch = remaining.match(/^(.*?)\*([^*]+)\*(.*)$/s)
-    if (italicMatch) {
-      if (italicMatch[1]) parts.push(<span key={`t-${key++}`}>{italicMatch[1]}</span>)
-      parts.push(<em key={`i-${key++}`} className="italic">{italicMatch[2]}</em>)
-      remaining = italicMatch[3]
-      continue
-    }
-
-    if (remaining) parts.push(<span key={`t-${key++}`}>{remaining}</span>)
-    break
-  }
-
-  return parts
-}
 
 interface CommentIndicatorProps {
   comment: ReviewComment
@@ -89,7 +29,6 @@ export function CommentIndicator({ comment }: CommentIndicatorProps) {
   const [showPopover, setShowPopover] = useState(false)
   const [position, setPosition] = useState({ top: 0, left: 0 })
   const colors = TYPE_COLORS[comment.type] || TYPE_COLORS.suggestion
-  const formattedContent = useMemo(() => formatMarkdown(comment.content), [comment.content])
 
   const handleClick = (e: React.MouseEvent) => {
     const rect = e.currentTarget.getBoundingClientRect()
@@ -111,28 +50,31 @@ export function CommentIndicator({ comment }: CommentIndicatorProps) {
         <MessageCircle size={12} className={colors.icon} />
       </button>
       {showPopover && createPortal(
-        <div
-          className={cn(
-            'fixed z-50 w-80 rounded-lg shadow-lg border bg-background',
-            colors.border
-          )}
-          style={{ top: position.top, left: position.left }}
-        >
-          <div className={cn('flex items-center justify-between p-2 border-b', colors.border)}>
-            <span className={cn('text-xs font-medium', colors.icon)}>
-              {TYPE_LABELS[comment.type]}
-            </span>
-            <button
-              onClick={() => setShowPopover(false)}
-              className="p-1 hover:bg-muted rounded"
-            >
-              <X size={12} />
-            </button>
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setShowPopover(false)} />
+          <div
+            className={cn(
+              'fixed z-50 w-96 max-h-80 rounded-lg shadow-lg border bg-background flex flex-col',
+              colors.border
+            )}
+            style={{ top: position.top, left: position.left }}
+          >
+            <div className={cn('flex items-center justify-between p-3 border-b', colors.border)}>
+              <span className={cn('text-xs font-medium', colors.icon)}>
+                {TYPE_LABELS[comment.type]}
+              </span>
+              <button
+                onClick={() => setShowPopover(false)}
+                className="p-1 hover:bg-muted rounded"
+              >
+                <X size={14} />
+              </button>
+            </div>
+            <div className="p-4 overflow-y-auto flex-1">
+              <MarkdownContent content={comment.content} className="text-sm leading-relaxed" />
+            </div>
           </div>
-          <div className="p-3 text-sm leading-relaxed">
-            {formattedContent}
-          </div>
-        </div>,
+        </>,
         document.body
       )}
     </>
