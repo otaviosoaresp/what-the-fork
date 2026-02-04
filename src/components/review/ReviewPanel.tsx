@@ -1,13 +1,48 @@
-import { useMemo } from 'react'
+import { useMemo, useCallback, useEffect } from 'react'
 import { useReviewStore } from '@/stores/review'
 import { useDiffStore } from '@/stores/diff'
-import { X, Loader2, FileCode } from 'lucide-react'
+import { useRepositoryStore } from '@/stores/repository'
+import { X, Loader2, FileCode, Trash2, AlertTriangle } from 'lucide-react'
 import { parseCodeReferences } from '@/lib/review-parser'
 import { MarkdownContent } from '@/components/shared/MarkdownContent'
+import { cn } from '@/lib/utils'
+import type { ReviewHistoryEntry } from '@/types/electron'
+
+function formatRelativeTime(timestamp: number): string {
+  const now = Date.now()
+  const diff = now - timestamp
+  const minutes = Math.floor(diff / 60000)
+  const hours = Math.floor(diff / 3600000)
+  const days = Math.floor(diff / 86400000)
+
+  if (minutes < 1) return 'agora'
+  if (minutes < 60) return `ha ${minutes}min`
+  if (hours < 24) return `ha ${hours}h`
+  if (days < 7) return `ha ${days}d`
+
+  const date = new Date(timestamp)
+  return date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' })
+}
 
 export function ReviewPanel() {
-  const { isOpen, isLoading, content, error, provider, generalNotes, closePanel, setLoading } = useReviewStore()
+  const {
+    isOpen,
+    isLoading,
+    content,
+    error,
+    generalNotes,
+    closePanel,
+    setLoading,
+    activeTab,
+    setActiveTab,
+    history,
+    setHistory,
+    selectHistoryEntry,
+    selectedHistoryEntry,
+    historyDiffChanged
+  } = useReviewStore()
   const { files, selectFile } = useDiffStore()
+  const { repoPath } = useRepositoryStore()
 
   const handleCancel = async () => {
     try {
@@ -41,6 +76,38 @@ export function ReviewPanel() {
     }
   }
 
+  const loadHistory = useCallback(async () => {
+    if (!repoPath) return
+    try {
+      const historyData = await window.electron.review.getHistory(repoPath)
+      setHistory(historyData)
+    } catch {
+      setHistory([])
+    }
+  }, [repoPath, setHistory])
+
+  const handleDeleteEntry = useCallback(async (entry: ReviewHistoryEntry, event: React.MouseEvent) => {
+    event.stopPropagation()
+    if (!repoPath) return
+    try {
+      await window.electron.review.deleteHistoryEntry(repoPath, entry.timestamp)
+      await loadHistory()
+    } catch {
+      // Ignore errors
+    }
+  }, [repoPath, loadHistory])
+
+  const handleSelectEntry = useCallback((entry: ReviewHistoryEntry) => {
+    const diffChanged = false
+    selectHistoryEntry(entry, diffChanged)
+  }, [selectHistoryEntry])
+
+  useEffect(() => {
+    if (activeTab === 'history') {
+      loadHistory()
+    }
+  }, [activeTab, loadHistory])
+
   if (!isOpen) {
     return null
   }
@@ -48,11 +115,29 @@ export function ReviewPanel() {
   return (
     <div className="w-96 border-l border-border flex flex-col bg-background">
       <div className="h-12 flex items-center justify-between px-4 border-b border-border">
-        <div className="flex items-center gap-2">
-          <span className="font-semibold text-sm">AI Review</span>
-          {provider && (
-            <span className="text-xs text-muted-foreground">({provider})</span>
-          )}
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setActiveTab('review')}
+            className={cn(
+              'text-sm font-medium pb-0.5',
+              activeTab === 'review'
+                ? 'border-b-2 border-accent text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            Review
+          </button>
+          <button
+            onClick={() => setActiveTab('history')}
+            className={cn(
+              'text-sm font-medium pb-0.5',
+              activeTab === 'history'
+                ? 'border-b-2 border-accent text-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            )}
+          >
+            Historico
+          </button>
         </div>
         <button
           onClick={closePanel}
@@ -63,72 +148,131 @@ export function ReviewPanel() {
         </button>
       </div>
 
-      {references.length > 0 && content && !isLoading && (
-        <div className="px-4 py-2 border-b border-border bg-muted/30">
-          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
-            <FileCode size={12} />
-            <span>{references.length} referencias</span>
-          </div>
-          <div className="flex flex-wrap gap-1">
-            {references.slice(0, 5).map((ref, i) => (
+      {activeTab === 'review' && (
+        <>
+          {historyDiffChanged && selectedHistoryEntry && (
+            <div className="px-4 py-2 border-b border-border bg-warning/10 border-l-2 border-l-warning">
+              <div className="flex items-center gap-2 text-sm text-warning">
+                <AlertTriangle size={14} />
+                <span>O codigo mudou desde este review</span>
+              </div>
+            </div>
+          )}
+
+          {references.length > 0 && content && !isLoading && (
+            <div className="px-4 py-2 border-b border-border bg-muted/30">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+                <FileCode size={12} />
+                <span>{references.length} referencias</span>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {references.slice(0, 5).map((ref, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleReferenceClick(ref.file, ref.line)}
+                    className="text-xs bg-muted hover:bg-muted/80 px-2 py-0.5 rounded transition-colors"
+                    title={ref.text}
+                  >
+                    {ref.file.split('/').pop()}:{ref.line}
+                  </button>
+                ))}
+                {references.length > 5 && (
+                  <span className="text-xs text-muted-foreground px-2 py-0.5">
+                    +{references.length - 5} mais
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="flex-1 overflow-auto p-4">
+            {isLoading && (
               <button
-                key={i}
-                onClick={() => handleReferenceClick(ref.file, ref.line)}
-                className="text-xs bg-muted hover:bg-muted/80 px-2 py-0.5 rounded transition-colors"
-                title={ref.text}
+                onClick={handleCancel}
+                className="flex flex-col items-center justify-center h-full gap-3 w-full hover:bg-muted/50 transition-colors cursor-pointer rounded-lg"
               >
-                {ref.file.split('/').pop()}:{ref.line}
+                <Loader2 size={24} className="animate-spin text-muted-foreground" />
+                <span className="text-sm text-muted-foreground">Analisando... (clique para cancelar)</span>
               </button>
-            ))}
-            {references.length > 5 && (
-              <span className="text-xs text-muted-foreground px-2 py-0.5">
-                +{references.length - 5} mais
-              </span>
             )}
-          </div>
-        </div>
-      )}
 
-      <div className="flex-1 overflow-auto p-4">
-        {isLoading && (
-          <button
-            onClick={handleCancel}
-            className="flex flex-col items-center justify-center h-full gap-3 w-full hover:bg-muted/50 transition-colors cursor-pointer rounded-lg"
-          >
-            <Loader2 size={24} className="animate-spin text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Analisando... (clique para cancelar)</span>
-          </button>
-        )}
-
-        {error && !isLoading && (
-          <div className="text-destructive">
-            <h3 className="font-semibold mb-2">Erro</h3>
-            <p className="text-sm">{error}</p>
-          </div>
-        )}
-
-        {content && !isLoading && !error && (
-          <>
-            <MarkdownContent content={content} onReferenceClick={handleReferenceClick} />
-            {generalNotes.length > 0 && (
-              <div className="mt-4 pt-4 border-t border-border">
-                <h3 className="text-sm font-semibold mb-2">Observacoes Gerais</h3>
-                <ul className="text-sm space-y-1">
-                  {generalNotes.map((note, i) => (
-                    <li key={i} className="text-muted-foreground">- {note}</li>
-                  ))}
-                </ul>
+            {error && !isLoading && (
+              <div className="text-destructive">
+                <h3 className="font-semibold mb-2">Erro</h3>
+                <p className="text-sm">{error}</p>
               </div>
             )}
-          </>
-        )}
 
-        {!isLoading && !error && !content && (
-          <p className="text-sm text-muted-foreground text-center mt-8">
-            Clique em 'Review' para analisar a branch
-          </p>
-        )}
-      </div>
+            {content && !isLoading && !error && (
+              <>
+                <MarkdownContent content={content} onReferenceClick={handleReferenceClick} />
+                {generalNotes.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-border">
+                    <h3 className="text-sm font-semibold mb-2">Observacoes Gerais</h3>
+                    <ul className="text-sm space-y-1">
+                      {generalNotes.map((note, i) => (
+                        <li key={i} className="text-muted-foreground">- {note}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </>
+            )}
+
+            {!isLoading && !error && !content && (
+              <p className="text-sm text-muted-foreground text-center mt-8">
+                Clique em 'Review' para analisar a branch
+              </p>
+            )}
+          </div>
+        </>
+      )}
+
+      {activeTab === 'history' && (
+        <div className="flex-1 overflow-auto p-4">
+          {history.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center mt-8">
+              Nenhum review no historico
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {history.map((entry) => (
+                <button
+                  key={entry.timestamp}
+                  onClick={() => handleSelectEntry(entry)}
+                  className="group w-full text-left p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-mono text-xs text-muted-foreground">
+                          {formatRelativeTime(entry.timestamp)}
+                        </span>
+                        <span className="text-xs bg-muted px-1.5 py-0.5 rounded">
+                          {entry.provider}
+                        </span>
+                      </div>
+                      <div className="font-mono text-xs text-muted-foreground mb-2">
+                        {entry.baseBranch} → {entry.compareBranch}
+                      </div>
+                      <p className="text-sm line-clamp-2">
+                        {entry.summary}
+                      </p>
+                    </div>
+                    <button
+                      onClick={(e) => handleDeleteEntry(entry, e)}
+                      className="opacity-0 group-hover:opacity-100 p-1 hover:text-destructive transition-all"
+                      title="Remover do historico"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

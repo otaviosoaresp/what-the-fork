@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { ReviewComment } from '@/types/electron'
+import type { ReviewComment, ReviewHistoryEntry } from '@/types/electron'
 
 interface ReviewState {
   isOpen: boolean
@@ -9,6 +9,10 @@ interface ReviewState {
   provider: string | null
   comments: ReviewComment[]
   generalNotes: string[]
+  activeTab: 'review' | 'history'
+  history: ReviewHistoryEntry[]
+  selectedHistoryEntry: ReviewHistoryEntry | null
+  historyDiffChanged: boolean
 
   openPanel: () => void
   closePanel: () => void
@@ -18,6 +22,9 @@ interface ReviewState {
   setStructuredContent: (summary: string, comments: ReviewComment[], generalNotes: string[], provider: string) => void
   setError: (error: string) => void
   clear: () => void
+  setActiveTab: (tab: 'review' | 'history') => void
+  setHistory: (history: ReviewHistoryEntry[]) => void
+  selectHistoryEntry: (entry: ReviewHistoryEntry | null, diffChanged: boolean) => void
 }
 
 export const useReviewStore = create<ReviewState>((set, get) => ({
@@ -28,6 +35,10 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
   provider: null,
   comments: [],
   generalNotes: [],
+  activeTab: 'review',
+  history: [],
+  selectedHistoryEntry: null,
+  historyDiffChanged: false,
 
   openPanel: () => set({ isOpen: true }),
   closePanel: () => set({ isOpen: false }),
@@ -48,7 +59,9 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
     generalNotes,
     provider,
     isLoading: false,
-    error: null
+    error: null,
+    selectedHistoryEntry: null,
+    historyDiffChanged: false
   }),
 
   setError: (error: string) => set({
@@ -63,6 +76,24 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
     provider: null,
     isLoading: false,
     comments: [],
-    generalNotes: []
+    generalNotes: [],
+    activeTab: 'review',
+    history: [],
+    selectedHistoryEntry: null,
+    historyDiffChanged: false
+  }),
+
+  setActiveTab: (activeTab: 'review' | 'history') => set({ activeTab }),
+
+  setHistory: (history: ReviewHistoryEntry[]) => set({ history }),
+
+  selectHistoryEntry: (entry: ReviewHistoryEntry | null, diffChanged: boolean) => set({
+    selectedHistoryEntry: entry,
+    historyDiffChanged: diffChanged,
+    content: entry?.summary ?? null,
+    comments: entry?.comments ?? [],
+    generalNotes: entry?.generalNotes ?? [],
+    provider: entry?.provider ?? null,
+    activeTab: 'review'
   })
 }))
