@@ -24,6 +24,35 @@ export async function getAvailableProviders(): Promise<string[]> {
   return availableProviders
 }
 
+async function getDefaultBranch(repoPath: string): Promise<string> {
+  const mainCheck = await executeGit(repoPath, ['rev-parse', '--verify', 'main'])
+  if (mainCheck.exitCode === 0) {
+    return 'main'
+  }
+
+  const masterCheck = await executeGit(repoPath, ['rev-parse', '--verify', 'master'])
+  if (masterCheck.exitCode === 0) {
+    return 'master'
+  }
+
+  const remoteMain = await executeGit(repoPath, ['rev-parse', '--verify', 'origin/main'])
+  if (remoteMain.exitCode === 0) {
+    return 'origin/main'
+  }
+
+  const remoteMaster = await executeGit(repoPath, ['rev-parse', '--verify', 'origin/master'])
+  if (remoteMaster.exitCode === 0) {
+    return 'origin/master'
+  }
+
+  throw new Error('Could not detect default branch (main/master)')
+}
+
+async function validateBranchExists(repoPath: string, branch: string): Promise<boolean> {
+  const result = await executeGit(repoPath, ['rev-parse', '--verify', branch])
+  return result.exitCode === 0
+}
+
 export async function reviewBranch(repoPath: string): Promise<ReviewResponse> {
   const config = getReviewConfig()
   const repoConfig = getRepoReviewConfig(repoPath)
@@ -44,11 +73,15 @@ export async function reviewBranch(repoPath: string): Promise<ReviewResponse> {
   }
   const currentBranch = branchResult.stdout.trim()
 
-  const baseBranch = repoConfig.baseBranch
+  let baseBranch = repoConfig.baseBranch
+  const baseBranchExists = await validateBranchExists(repoPath, baseBranch)
+  if (!baseBranchExists) {
+    baseBranch = await getDefaultBranch(repoPath)
+  }
 
   const diffResult = await executeGit(repoPath, ['diff', `${baseBranch}...${currentBranch}`])
   if (diffResult.exitCode !== 0) {
-    throw new Error(`Failed to get diff: ${diffResult.stderr}`)
+    throw new Error(`Failed to get diff between "${baseBranch}" and "${currentBranch}". Check Settings to configure the correct base branch.`)
   }
 
   let diff = diffResult.stdout.trim()
