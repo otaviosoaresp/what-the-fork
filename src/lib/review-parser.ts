@@ -1,4 +1,4 @@
-import type { StructuredReview, ReviewComment, CommentType } from '../../electron/ai/providers/types'
+import type { StructuredReview, ReviewComment, CommentType } from '@/types/electron'
 
 export interface CodeReference {
   file: string

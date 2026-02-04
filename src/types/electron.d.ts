@@ -17,6 +17,21 @@ interface ReviewResponse {
   model?: string
 }
 
+export type CommentType = 'bug' | 'performance' | 'readability' | 'suggestion' | 'positive'
+
+export interface ReviewComment {
+  file: string
+  line: number
+  type: CommentType
+  content: string
+}
+
+export interface StructuredReview {
+  summary: string
+  comments: ReviewComment[]
+  generalNotes: string[]
+}
+
 export interface AIConfig {
   apiKey?: string
   model?: string
@@ -68,6 +83,7 @@ export interface ElectronAPI {
     getAvailableProviders: () => Promise<string[]>
     reviewBranch: (repoPath: string, baseBranch: string, compareBranch: string) => Promise<ReviewResponse>
     ask: (repoPath: string, code: string, question: string) => Promise<ReviewResponse>
+    cancel: () => Promise<void>
   }
 }
 

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { MessageCircle, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import type { ReviewComment } from '../../../electron/ai/providers/types'
+import type { ReviewComment } from '@/types/electron'
 
 interface CommentIndicatorProps {
   comment: ReviewComment

@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { ReviewComment } from '../../electron/ai/providers/types'
+import type { ReviewComment } from '@/types/electron'
 
 interface ReviewState {
   isOpen: boolean
