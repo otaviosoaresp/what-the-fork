@@ -57,15 +57,17 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
       const githubStore = useGitHubStore.getState()
       await githubStore.checkAvailability()
 
-      if (githubStore.isAvailable) {
+      const { isAvailable } = useGitHubStore.getState()
+      if (isAvailable) {
         await githubStore.loadAccounts()
 
+        const { accounts } = useGitHubStore.getState()
         const repoKey = repoName
         const savedAccount = await window.electron.github.accounts.getForRepo(repoKey)
 
-        if (savedAccount) {
+        if (savedAccount && accounts.some(a => a.username === savedAccount)) {
           await githubStore.selectAccount(savedAccount)
-        } else if (githubStore.accounts.length > 0) {
+        } else if (accounts.length > 0) {
           githubStore.setNeedsAccountSelection(true)
         }
       }
