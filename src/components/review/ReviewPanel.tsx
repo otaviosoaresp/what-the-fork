@@ -199,8 +199,17 @@ function parseItalic(text: string, startKey: number): React.ReactNode[] {
 }
 
 export function ReviewPanel() {
-  const { isOpen, isLoading, content, error, provider, closePanel } = useReviewStore()
+  const { isOpen, isLoading, content, error, provider, generalNotes, closePanel, setLoading } = useReviewStore()
   const { files, selectFile } = useDiffStore()
+
+  const handleCancel = async () => {
+    try {
+      await window.electron.review.cancel()
+    } catch {
+      // ignore
+    }
+    setLoading(false)
+  }
 
   const references = useMemo(() => {
     if (!content) return []
@@ -275,10 +284,13 @@ export function ReviewPanel() {
 
       <div className="flex-1 overflow-auto p-4">
         {isLoading && (
-          <div className="flex flex-col items-center justify-center h-full gap-3">
+          <button
+            onClick={handleCancel}
+            className="flex flex-col items-center justify-center h-full gap-3 w-full hover:bg-muted/50 transition-colors cursor-pointer rounded-lg"
+          >
             <Loader2 size={24} className="animate-spin text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Analisando...</span>
-          </div>
+            <span className="text-sm text-muted-foreground">Analisando... (clique para cancelar)</span>
+          </button>
         )}
 
         {error && !isLoading && (
@@ -289,7 +301,19 @@ export function ReviewPanel() {
         )}
 
         {content && !isLoading && !error && (
-          <MarkdownContent content={content} onReferenceClick={handleReferenceClick} />
+          <>
+            <MarkdownContent content={content} onReferenceClick={handleReferenceClick} />
+            {generalNotes.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-border">
+                <h3 className="text-sm font-semibold mb-2">Observacoes Gerais</h3>
+                <ul className="text-sm space-y-1">
+                  {generalNotes.map((note, i) => (
+                    <li key={i} className="text-muted-foreground">- {note}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>
         )}
 
         {!isLoading && !error && !content && (
