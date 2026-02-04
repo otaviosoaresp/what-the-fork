@@ -84,6 +84,7 @@ export interface ElectronAPI {
     reviewBranch: (repoPath: string, baseBranch: string, compareBranch: string) => Promise<ReviewResponse>
     ask: (repoPath: string, code: string, question: string) => Promise<ReviewResponse>
     cancel: () => Promise<void>
+    resetRepoPrompt: (repoPath: string) => Promise<void>
   }
 }
 

@@ -28,6 +28,7 @@ export function AISettings() {
   const [baseBranch, setBaseBranch] = useState('main')
   const [isSavingGlm, setIsSavingGlm] = useState(false)
   const [isSavingRepoConfig, setIsSavingRepoConfig] = useState(false)
+  const [isResettingPrompt, setIsResettingPrompt] = useState(false)
 
   const repoPath = useRepositoryStore(state => state.repoPath)
 
@@ -67,6 +68,17 @@ export function AISettings() {
       await window.electron.review.setRepoConfig(repoPath, { reviewPrompt, baseBranch })
     } finally {
       setIsSavingRepoConfig(false)
+    }
+  }
+
+  const handleResetPrompt = async () => {
+    if (!repoPath) return
+    setIsResettingPrompt(true)
+    try {
+      await window.electron.review.resetRepoPrompt(repoPath)
+      await loadReviewConfig()
+    } finally {
+      setIsResettingPrompt(false)
     }
   }
 
@@ -312,13 +324,23 @@ export function AISettings() {
                 />
               </div>
 
-              <button
-                onClick={handleSaveRepoConfig}
-                disabled={isSavingRepoConfig}
-                className="btn btn-primary"
-              >
-                {isSavingRepoConfig ? 'Saving...' : 'Save Repository Settings'}
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSaveRepoConfig}
+                  disabled={isSavingRepoConfig}
+                  className="btn btn-primary"
+                >
+                  {isSavingRepoConfig ? 'Saving...' : 'Save Repository Settings'}
+                </button>
+                <button
+                  onClick={handleResetPrompt}
+                  disabled={isResettingPrompt}
+                  className="btn btn-ghost"
+                  title="Reset prompt to default (enables inline comments)"
+                >
+                  {isResettingPrompt ? 'Resetting...' : 'Reset Prompt'}
+                </button>
+              </div>
             </>
           )}
         </div>

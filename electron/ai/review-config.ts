@@ -105,3 +105,22 @@ export function getReviewConfigState(): {
     glmApiKeyConfigured: glmApiKey.length > 0
   }
 }
+
+export function resetRepoReviewPrompt(repoPath: string): void {
+  const repoConfigs = store.get('repoConfigs')
+  const existingConfig = repoConfigs[repoPath]
+
+  if (existingConfig) {
+    store.set('repoConfigs', {
+      ...repoConfigs,
+      [repoPath]: {
+        ...existingConfig,
+        reviewPrompt: DEFAULT_REVIEW_PROMPT
+      }
+    })
+  }
+}
+
+export function clearAllRepoConfigs(): void {
+  store.set('repoConfigs', {})
+}

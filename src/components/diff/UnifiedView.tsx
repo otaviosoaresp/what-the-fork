@@ -22,15 +22,21 @@ export function UnifiedView({ file }: UnifiedViewProps) {
   }, [file.chunks])
 
   const fileComments = useMemo(() => {
+    console.log('[UnifiedView] file.path:', file.path)
+    console.log('[UnifiedView] comments from store:', comments)
     const normalizedPath = file.path.replace(/^\.?\//, '')
-    return comments.filter(c => {
+    const filtered = comments.filter(c => {
       const normalizedCommentPath = c.file.replace(/^\.?\//, '')
-      return (
+      const match = (
         normalizedCommentPath === normalizedPath ||
         normalizedCommentPath.endsWith('/' + normalizedPath) ||
         normalizedPath.endsWith('/' + normalizedCommentPath)
       )
+      console.log('[UnifiedView] Comparing:', { normalizedCommentPath, normalizedPath, match })
+      return match
     })
+    console.log('[UnifiedView] Filtered comments for file:', filtered)
+    return filtered
   }, [comments, file.path])
 
   const getCommentForLine = (lineNumber: number | undefined) => {

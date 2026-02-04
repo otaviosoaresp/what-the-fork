@@ -1,5 +1,5 @@
 import { ipcMain } from 'electron'
-import { getReviewConfigState, setReviewConfig, getRepoReviewConfig, setRepoReviewConfig } from './review-config'
+import { getReviewConfigState, setReviewConfig, getRepoReviewConfig, setRepoReviewConfig, resetRepoReviewPrompt } from './review-config'
 import { getAvailableProviders, reviewBranch, askAboutCode, cancelActiveReview } from './provider-manager'
 import type { ReviewConfig, RepoReviewConfig } from './providers/types'
 
@@ -34,5 +34,9 @@ export function registerReviewHandlers(): void {
 
   ipcMain.handle('review:cancel', async () => {
     cancelActiveReview()
+  })
+
+  ipcMain.handle('review:reset-repo-prompt', async (_event, repoPath: string) => {
+    resetRepoReviewPrompt(repoPath)
   })
 }

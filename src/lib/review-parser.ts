@@ -77,8 +77,17 @@ const VALID_COMMENT_TYPES: CommentType[] = ['bug', 'performance', 'readability',
 
 export function parseStructuredReview(content: string): StructuredReview {
   try {
-    const cleaned = content.trim().replace(/^```json?\s*/, '').replace(/\s*```$/, '')
+    let cleaned = content.trim()
+    // Remove markdown code fences if present
+    cleaned = cleaned.replace(/^```json?\s*/i, '').replace(/\s*```$/i, '')
+    // Try to extract JSON object if wrapped in text
+    const jsonMatch = cleaned.match(/\{[\s\S]*\}/)
+    if (jsonMatch) {
+      cleaned = jsonMatch[0]
+    }
+    console.log('[parseStructuredReview] Cleaned content:', cleaned.substring(0, 500))
     const parsed = JSON.parse(cleaned)
+    console.log('[parseStructuredReview] Parsed JSON:', parsed)
 
     if (typeof parsed.summary !== 'string') {
       throw new Error('Invalid summary')
@@ -87,6 +96,7 @@ export function parseStructuredReview(content: string): StructuredReview {
     const comments: ReviewComment[] = []
     if (Array.isArray(parsed.comments)) {
       for (const c of parsed.comments) {
+        console.log('[parseStructuredReview] Processing comment:', c)
         if (
           typeof c.file === 'string' &&
           typeof c.line === 'number' &&
@@ -98,6 +108,13 @@ export function parseStructuredReview(content: string): StructuredReview {
             line: c.line,
             type: c.type,
             content: c.content
+          })
+        } else {
+          console.log('[parseStructuredReview] Invalid comment:', {
+            fileOk: typeof c.file === 'string',
+            lineOk: typeof c.line === 'number',
+            typeOk: VALID_COMMENT_TYPES.includes(c.type),
+            contentOk: typeof c.content === 'string'
           })
         }
       }
@@ -112,8 +129,11 @@ export function parseStructuredReview(content: string): StructuredReview {
       }
     }
 
+    console.log('[parseStructuredReview] Final result:', { summary: parsed.summary.substring(0, 100), commentsCount: comments.length, generalNotesCount: generalNotes.length })
     return { summary: parsed.summary, comments, generalNotes }
-  } catch {
+  } catch (err) {
+    console.error('[parseStructuredReview] Parse error:', err)
+    console.log('[parseStructuredReview] Raw content:', content.substring(0, 500))
     return {
       summary: content,
       comments: [],
