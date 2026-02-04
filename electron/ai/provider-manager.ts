@@ -24,36 +24,11 @@ export async function getAvailableProviders(): Promise<string[]> {
   return availableProviders
 }
 
-async function getDefaultBranch(repoPath: string): Promise<string> {
-  const mainCheck = await executeGit(repoPath, ['rev-parse', '--verify', 'main'])
-  if (mainCheck.exitCode === 0) {
-    return 'main'
-  }
-
-  const masterCheck = await executeGit(repoPath, ['rev-parse', '--verify', 'master'])
-  if (masterCheck.exitCode === 0) {
-    return 'master'
-  }
-
-  const remoteMain = await executeGit(repoPath, ['rev-parse', '--verify', 'origin/main'])
-  if (remoteMain.exitCode === 0) {
-    return 'origin/main'
-  }
-
-  const remoteMaster = await executeGit(repoPath, ['rev-parse', '--verify', 'origin/master'])
-  if (remoteMaster.exitCode === 0) {
-    return 'origin/master'
-  }
-
-  throw new Error('Could not detect default branch (main/master)')
-}
-
-async function validateBranchExists(repoPath: string, branch: string): Promise<boolean> {
-  const result = await executeGit(repoPath, ['rev-parse', '--verify', branch])
-  return result.exitCode === 0
-}
-
-export async function reviewBranch(repoPath: string): Promise<ReviewResponse> {
+export async function reviewBranch(
+  repoPath: string,
+  baseBranch: string,
+  compareBranch: string
+): Promise<ReviewResponse> {
   const config = getReviewConfig()
   const repoConfig = getRepoReviewConfig(repoPath)
 
@@ -67,21 +42,9 @@ export async function reviewBranch(repoPath: string): Promise<ReviewResponse> {
     throw new Error(`Provider "${config.provider}" is not available`)
   }
 
-  const branchResult = await executeGit(repoPath, ['rev-parse', '--abbrev-ref', 'HEAD'])
-  if (branchResult.exitCode !== 0) {
-    throw new Error(`Failed to get current branch: ${branchResult.stderr}`)
-  }
-  const currentBranch = branchResult.stdout.trim()
-
-  let baseBranch = repoConfig.baseBranch
-  const baseBranchExists = await validateBranchExists(repoPath, baseBranch)
-  if (!baseBranchExists) {
-    baseBranch = await getDefaultBranch(repoPath)
-  }
-
-  const diffResult = await executeGit(repoPath, ['diff', `${baseBranch}...${currentBranch}`])
+  const diffResult = await executeGit(repoPath, ['diff', `${baseBranch}...${compareBranch}`])
   if (diffResult.exitCode !== 0) {
-    throw new Error(`Failed to get diff between "${baseBranch}" and "${currentBranch}". Check Settings to configure the correct base branch.`)
+    throw new Error(`Failed to get diff between "${baseBranch}" and "${compareBranch}": ${diffResult.stderr}`)
   }
 
   let diff = diffResult.stdout.trim()
@@ -93,7 +56,7 @@ export async function reviewBranch(repoPath: string): Promise<ReviewResponse> {
     diff = diff.substring(0, 50000)
   }
 
-  const context = `Review do diff entre ${baseBranch} e ${currentBranch}:\n\n${diff}`
+  const context = `Review do diff entre ${baseBranch} e ${compareBranch}:\n\n${diff}`
 
   return provider.review({
     prompt: repoConfig.reviewPrompt,

@@ -9,8 +9,12 @@
     "dist-electron/**/*"
   ],
   "linux": {
-    "target": ["AppImage", "deb"],
-    "category": "Development"
+    "target": ["AppImage", "pacman"],
+    "category": "Development",
+    "vendor": "Otavio Soares"
+  },
+  "pacman": {
+    "depends": []
   },
   "mac": {
     "target": ["dmg"],

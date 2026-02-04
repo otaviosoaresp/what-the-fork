@@ -23,7 +23,7 @@ export function Header() {
   const { repoName, remoteStatus, repoPath, loadRepository } = useRepositoryStore()
   const addToast = useToastStore((s) => s.addToast)
   const { diffViewMode, setDiffViewMode, recentRepositories, addRecentRepository } = useUIStore()
-  const files = useDiffStore((s) => s.files)
+  const { files, baseBranch, compareBranch, mode } = useDiffStore()
   const { isOpen, setLoading, setContent, setError, openPanel } = useReviewStore()
 
   const otherRepos = recentRepositories.filter(p => p !== repoPath)
@@ -109,13 +109,15 @@ export function Header() {
     }
   }
 
+  const canReview = mode === 'branches' && baseBranch && compareBranch && files.length > 0
+
   const handleReview = async () => {
-    if (!repoPath || isReviewing) return
+    if (!repoPath || !baseBranch || !compareBranch || isReviewing) return
     setIsReviewing(true)
     openPanel()
     setLoading(true)
     try {
-      const result = await window.electron.review.reviewBranch(repoPath)
+      const result = await window.electron.review.reviewBranch(repoPath, baseBranch, compareBranch)
       setContent(result.content, result.provider)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Review failed')
@@ -292,9 +294,9 @@ export function Header() {
         </button>
         <button
           onClick={handleReview}
-          disabled={isReviewing || files.length === 0}
+          disabled={isReviewing || !canReview}
           className={cn('btn btn-ghost btn-icon', isOpen && 'bg-muted')}
-          title="AI Review"
+          title={canReview ? `Review ${baseBranch} vs ${compareBranch}` : 'Select branches to review'}
         >
           {isReviewing ? (
             <Loader2 size={16} className="animate-spin" />

@@ -66,7 +66,7 @@ export interface ElectronAPI {
     getRepoConfig: (repoPath: string) => Promise<RepoReviewConfig>
     setRepoConfig: (repoPath: string, config: { reviewPrompt?: string; baseBranch?: string }) => Promise<void>
     getAvailableProviders: () => Promise<string[]>
-    reviewBranch: (repoPath: string) => Promise<ReviewResponse>
+    reviewBranch: (repoPath: string, baseBranch: string, compareBranch: string) => Promise<ReviewResponse>
     ask: (repoPath: string, code: string, question: string) => Promise<ReviewResponse>
   }
 }
