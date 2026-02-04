@@ -2,6 +2,7 @@ export interface ReviewRequest {
   prompt: string
   context: string
   repoPath: string
+  signal?: AbortSignal
 }
 
 export interface ReviewResponse {
@@ -24,4 +25,19 @@ export interface ReviewConfig {
 export interface RepoReviewConfig {
   reviewPrompt: string
   baseBranch: string
+}
+
+export type CommentType = 'bug' | 'performance' | 'readability' | 'suggestion' | 'positive'
+
+export interface ReviewComment {
+  file: string
+  line: number
+  type: CommentType
+  content: string
+}
+
+export interface StructuredReview {
+  summary: string
+  comments: ReviewComment[]
+  generalNotes: string[]
 }
