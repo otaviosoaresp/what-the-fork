@@ -31,7 +31,8 @@ export class GLMProvider implements AIProvider {
           { role: 'system', content: request.prompt },
           { role: 'user', content: request.context }
         ]
-      })
+      }),
+      signal: request.signal
     })
 
     if (!response.ok) {
