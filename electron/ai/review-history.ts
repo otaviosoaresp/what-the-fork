@@ -34,7 +34,8 @@ export function getCachedReview(
   repoPath: string,
   baseBranch: string,
   compareBranch: string,
-  diff: string
+  diff: string,
+  provider: string
 ): { review: StructuredReview; provider: string } | null {
   const reviews = store.get('reviews')
   const repoHistory = reviews[repoPath]
@@ -49,7 +50,8 @@ export function getCachedReview(
     entry =>
       entry.baseBranch === baseBranch &&
       entry.compareBranch === compareBranch &&
-      entry.diffHash === diffHash
+      entry.diffHash === diffHash &&
+      entry.provider === provider
   )
 
   if (cached) {
@@ -79,12 +81,14 @@ export function saveReviewToHistory(
 
   const diffHash = generateDiffHash(diff)
 
-  // Remove existing entry for same branches and diff if exists
+  // Remove existing entry for same branches, diff AND provider if exists
+  // This allows keeping reviews from different providers for the same diff
   const filteredHistory = repoHistory.filter(
     entry =>
       !(entry.baseBranch === baseBranch &&
         entry.compareBranch === compareBranch &&
-        entry.diffHash === diffHash)
+        entry.diffHash === diffHash &&
+        entry.provider === provider)
   )
 
   // Add new entry at the beginning

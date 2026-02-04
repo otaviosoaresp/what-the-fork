@@ -112,9 +112,12 @@ export async function reviewBranch(
     diff = diff.substring(0, 50000)
   }
 
+  const providerName = config.provider
+  const provider = providers[providerName]
+
   // Check cache unless explicitly skipped
   if (!skipCache) {
-    const cached = getCachedReview(repoPath, baseBranch, compareBranch, diff)
+    const cached = getCachedReview(repoPath, baseBranch, compareBranch, diff, providerName)
     if (cached) {
       return {
         content: cached.review.summary,
@@ -124,15 +127,13 @@ export async function reviewBranch(
       }
     }
   }
-
-  const provider = providers[config.provider]
   if (!provider) {
-    throw new Error(`Provider "${config.provider}" not found`)
+    throw new Error(`Provider "${providerName}" not found`)
   }
 
   const isAvailable = await provider.isAvailable()
   if (!isAvailable) {
-    throw new Error(`Provider "${config.provider}" is not available`)
+    throw new Error(`Provider "${providerName}" is not available`)
   }
 
   const context = `Review do diff entre ${baseBranch} e ${compareBranch}:\n\n${diff}`
@@ -156,7 +157,7 @@ export async function reviewBranch(
 
     // Parse and cache the result
     const structured = parseStructuredReview(result.content)
-    saveReviewToHistory(repoPath, baseBranch, compareBranch, diff, config.provider, structured)
+    saveReviewToHistory(repoPath, baseBranch, compareBranch, diff, providerName, structured)
 
     return {
       ...result,
