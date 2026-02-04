@@ -45,7 +45,8 @@ Regras:
 - O campo "line" deve ser o numero da linha no arquivo NOVO (lado direito do diff, linhas com +)
 - O campo "file" deve ser o caminho relativo do arquivo
 - Seja direto e objetivo nos comentarios
-- Retorne APENAS o JSON, sem markdown, sem crases, sem texto adicional`
+- IMPORTANTE: No campo "content", use backticks (\`) para envolver nomes de variaveis, funcoes, classes e trechos de codigo. Exemplo: "A variavel \`userId\` deve ser validada antes de chamar \`fetchUser()\`"
+- Retorne APENAS o JSON, sem markdown externo, sem crases envolvendo o JSON`
 
 export function getReviewConfig(): ReviewConfig {
   return {
