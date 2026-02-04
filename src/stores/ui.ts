@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 type DiffViewMode = 'split' | 'unified'
-type SidebarSection = 'branches' | 'staging' | 'commits'
+type SidebarSection = 'branches' | 'staging' | 'commits' | 'pull-requests'
 
 interface UIState {
   diffViewMode: DiffViewMode
