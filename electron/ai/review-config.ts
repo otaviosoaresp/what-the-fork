@@ -17,14 +17,35 @@ const store = new Store<StoreSchema>({
   encryptionKey: 'git-branch-viewer-secure-key'
 })
 
-export const DEFAULT_REVIEW_PROMPT = `Voce e um code reviewer experiente. Analise o diff fornecido e:
-- Identifique bugs potenciais
-- Sugira melhorias de performance
-- Aponte problemas de legibilidade
-- Valide boas praticas
+export const DEFAULT_REVIEW_PROMPT = `Voce e um code reviewer experiente. Analise o diff fornecido e retorne um JSON valido com a seguinte estrutura:
 
-Seja direto e objetivo. Use markdown para formatacao.
-Ao referenciar codigo, use o formato: \`arquivo:linha\` (ex: \`src/utils.ts:42\`).`
+{
+  "summary": "Resumo geral do review em 2-3 frases",
+  "comments": [
+    {
+      "file": "caminho/do/arquivo.ts",
+      "line": 42,
+      "type": "bug",
+      "content": "Explicacao do problema ou sugestao"
+    }
+  ],
+  "generalNotes": [
+    "Observacoes gerais que nao se aplicam a uma linha especifica"
+  ]
+}
+
+Tipos de comentario disponiveis:
+- bug: problema que pode causar erro em runtime
+- performance: oportunidade de otimizacao
+- readability: melhoria de legibilidade ou manutencao
+- suggestion: sugestao de melhoria geral
+- positive: algo bem feito que vale destacar
+
+Regras:
+- O campo "line" deve ser o numero da linha no arquivo NOVO (lado direito do diff, linhas com +)
+- O campo "file" deve ser o caminho relativo do arquivo
+- Seja direto e objetivo nos comentarios
+- Retorne APENAS o JSON, sem markdown, sem crases, sem texto adicional`
 
 export function getReviewConfig(): ReviewConfig {
   return {
