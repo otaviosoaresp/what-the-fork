@@ -11,6 +11,15 @@ const providers: Record<string, AIProvider> = {
   'glm': new GLMProvider()
 }
 
+let activeController: AbortController | null = null
+
+export function cancelActiveReview(): void {
+  if (activeController) {
+    activeController.abort()
+    activeController = null
+  }
+}
+
 export async function getAvailableProviders(): Promise<string[]> {
   const availableProviders: string[] = []
 
@@ -58,11 +67,19 @@ export async function reviewBranch(
 
   const context = `Review do diff entre ${baseBranch} e ${compareBranch}:\n\n${diff}`
 
-  return provider.review({
-    prompt: repoConfig.reviewPrompt,
-    context,
-    repoPath
-  })
+  activeController = new AbortController()
+
+  try {
+    const result = await provider.review({
+      prompt: repoConfig.reviewPrompt,
+      context,
+      repoPath,
+      signal: activeController.signal
+    })
+    return result
+  } finally {
+    activeController = null
+  }
 }
 
 export async function askAboutCode(
@@ -85,9 +102,17 @@ export async function askAboutCode(
   const prompt = 'Voce e um assistente de programacao. Responda de forma clara e objetiva. Use markdown para formatacao.'
   const context = `Codigo:\n\`\`\`\n${code}\n\`\`\`\n\nPergunta: ${question}`
 
-  return provider.review({
-    prompt,
-    context,
-    repoPath
-  })
+  activeController = new AbortController()
+
+  try {
+    const result = await provider.review({
+      prompt,
+      context,
+      repoPath,
+      signal: activeController.signal
+    })
+    return result
+  } finally {
+    activeController = null
+  }
 }
