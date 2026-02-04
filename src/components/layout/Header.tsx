@@ -4,9 +4,11 @@ import { useRepositoryStore } from '@/stores/repository'
 import { useBranchesStore } from '@/stores/branches'
 import { useUIStore } from '@/stores/ui'
 import { useToastStore } from '@/stores/toast'
+import { useReviewStore } from '@/stores/review'
+import { useDiffStore } from '@/stores/diff'
 import { cn } from '@/lib/utils'
 import { SettingsModal } from '@/components/settings/SettingsModal'
-import { Settings } from 'lucide-react'
+import { Settings, MessageSquare, Loader2 } from 'lucide-react'
 
 export function Header() {
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -16,10 +18,13 @@ export function Header() {
   const [showSettings, setShowSettings] = useState(false)
   const [showRepoMenu, setShowRepoMenu] = useState(false)
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 })
+  const [isReviewing, setIsReviewing] = useState(false)
   const repoButtonRef = useRef<HTMLButtonElement>(null)
   const { repoName, remoteStatus, repoPath, loadRepository } = useRepositoryStore()
   const addToast = useToastStore((s) => s.addToast)
   const { diffViewMode, setDiffViewMode, recentRepositories, addRecentRepository } = useUIStore()
+  const files = useDiffStore((s) => s.files)
+  const { isOpen, setLoading, setContent, setError, openPanel } = useReviewStore()
 
   const otherRepos = recentRepositories.filter(p => p !== repoPath)
 
@@ -101,6 +106,21 @@ export function Header() {
       ])
     } finally {
       setIsRefreshing(false)
+    }
+  }
+
+  const handleReview = async () => {
+    if (!repoPath || isReviewing) return
+    setIsReviewing(true)
+    openPanel()
+    setLoading(true)
+    try {
+      const result = await window.electron.review.reviewBranch(repoPath)
+      setContent(result.content, result.provider)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Review failed')
+    } finally {
+      setIsReviewing(false)
     }
   }
 
@@ -269,6 +289,18 @@ export function Header() {
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
           </svg>
+        </button>
+        <button
+          onClick={handleReview}
+          disabled={isReviewing || files.length === 0}
+          className={cn('btn btn-ghost btn-icon', isOpen && 'bg-muted')}
+          title="AI Review"
+        >
+          {isReviewing ? (
+            <Loader2 size={16} className="animate-spin" />
+          ) : (
+            <MessageSquare size={16} />
+          )}
         </button>
         <button onClick={() => setShowSettings(true)} className="btn btn-ghost btn-icon" title="Settings">
           <Settings size={16} />
