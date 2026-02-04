@@ -23,7 +23,8 @@ export const DEFAULT_REVIEW_PROMPT = `Voce e um code reviewer experiente. Analis
 - Aponte problemas de legibilidade
 - Valide boas praticas
 
-Seja direto e objetivo. Use markdown para formatacao.`
+Seja direto e objetivo. Use markdown para formatacao.
+Ao referenciar codigo, use o formato: \`arquivo:linha\` (ex: \`src/utils.ts:42\`).`
 
 export function getReviewConfig(): ReviewConfig {
   return {
