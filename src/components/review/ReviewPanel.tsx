@@ -237,10 +237,10 @@ export function ReviewPanel() {
           ) : (
             <div className="space-y-2">
               {history.map((entry) => (
-                <button
+                <div
                   key={entry.timestamp}
                   onClick={() => handleSelectEntry(entry)}
-                  className="group w-full text-left p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                  className="group w-full text-left p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors cursor-pointer"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
@@ -267,7 +267,7 @@ export function ReviewPanel() {
                       <Trash2 size={14} />
                     </button>
                   </div>
-                </button>
+                </div>
               ))}
             </div>
           )}

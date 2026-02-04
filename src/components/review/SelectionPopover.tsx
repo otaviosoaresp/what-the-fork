@@ -60,8 +60,8 @@ export function SelectionPopover({ text, rect, onClose }: SelectionPopoverProps)
       style={{ top, left, transform: 'translate(-50%, -100%)' }}
     >
       {showInput ? (
-        <div className="bg-background border border-border rounded-lg shadow-lg w-96">
-          <div className="flex items-center justify-between p-3 border-b border-border">
+        <div className="bg-background border border-border rounded-lg shadow-lg w-[480px]">
+          <div className="flex items-center justify-between p-4 border-b border-border">
             <span className="text-sm font-medium">Perguntar sobre o codigo</span>
             <button
               onClick={() => {
@@ -70,19 +70,19 @@ export function SelectionPopover({ text, rect, onClose }: SelectionPopoverProps)
               }}
               className="p-1 hover:bg-muted rounded"
             >
-              <X size={14} />
+              <X size={16} />
             </button>
           </div>
 
-          <div className="p-3 border-b border-border">
-            <div className="max-h-32 overflow-auto rounded bg-muted">
-              <pre className="text-xs font-mono p-3 whitespace-pre-wrap break-all text-muted-foreground">
-                {text.length > 500 ? text.slice(0, 500) + '...' : text}
+          <div className="p-4 border-b border-border">
+            <div className="max-h-40 overflow-auto rounded bg-muted">
+              <pre className="text-xs font-mono p-4 whitespace-pre-wrap break-all text-muted-foreground">
+                {text.length > 800 ? text.slice(0, 800) + '...' : text}
               </pre>
             </div>
           </div>
 
-          <div className="p-3">
+          <div className="p-4">
             <div className="flex gap-2">
               <input
                 type="text"

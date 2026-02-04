@@ -11,6 +11,8 @@ export function MarkdownContent({ content, onReferenceClick, className }: Markdo
   const lines = content.split('\n')
   const elements: React.ReactNode[] = []
   let inCodeBlock = false
+  let codeBlockLines: string[] = []
+  let codeBlockStart = 0
 
   const formatLine = (text: string, keyPrefix: string) =>
     formatInlineMarkdown(text, 0, onReferenceClick, keyPrefix)
@@ -20,27 +22,33 @@ export function MarkdownContent({ content, onReferenceClick, className }: Markdo
     const key = `line-${i}`
 
     if (line.startsWith('```')) {
+      if (inCodeBlock) {
+        elements.push(
+          <pre key={`codeblock-${codeBlockStart}`} className="bg-muted p-4 rounded-md text-xs font-mono overflow-x-auto my-2 whitespace-pre">
+            {codeBlockLines.join('\n')}
+          </pre>
+        )
+        codeBlockLines = []
+      } else {
+        codeBlockStart = i
+      }
       inCodeBlock = !inCodeBlock
       continue
     }
 
     if (inCodeBlock) {
-      elements.push(
-        <pre key={key} className="bg-muted px-3 py-1 text-sm font-mono overflow-x-auto">
-          {line}
-        </pre>
-      )
+      codeBlockLines.push(line)
       continue
     }
 
     if (line.trim() === '') {
-      elements.push(<br key={key} />)
+      elements.push(<div key={key} className="h-2" />)
       continue
     }
 
     if (line.startsWith('### ')) {
       elements.push(
-        <h3 key={key} className="text-base font-semibold mt-4 mb-2">
+        <h3 key={key} className="text-sm font-semibold mt-3 mb-1">
           {formatLine(line.slice(4), key)}
         </h3>
       )
@@ -49,7 +57,7 @@ export function MarkdownContent({ content, onReferenceClick, className }: Markdo
 
     if (line.startsWith('## ')) {
       elements.push(
-        <h2 key={key} className="text-lg font-semibold mt-4 mb-2">
+        <h2 key={key} className="text-base font-semibold mt-3 mb-1">
           {formatLine(line.slice(3), key)}
         </h2>
       )
@@ -58,7 +66,7 @@ export function MarkdownContent({ content, onReferenceClick, className }: Markdo
 
     if (line.startsWith('# ')) {
       elements.push(
-        <h1 key={key} className="text-xl font-bold mt-4 mb-2">
+        <h1 key={key} className="text-lg font-bold mt-3 mb-1">
           {formatLine(line.slice(2), key)}
         </h1>
       )
@@ -75,7 +83,7 @@ export function MarkdownContent({ content, onReferenceClick, className }: Markdo
     }
 
     elements.push(
-      <p key={key} className="mb-2">
+      <p key={key} className="mb-1.5">
         {formatLine(line, key)}
       </p>
     )

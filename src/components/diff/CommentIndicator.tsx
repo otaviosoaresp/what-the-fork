@@ -54,23 +54,23 @@ export function CommentIndicator({ comment }: CommentIndicatorProps) {
           <div className="fixed inset-0 z-40" onClick={() => setShowPopover(false)} />
           <div
             className={cn(
-              'fixed z-50 w-96 max-h-80 rounded-lg shadow-lg border bg-background flex flex-col',
+              'fixed z-50 w-[480px] max-h-[400px] rounded-lg shadow-lg border bg-background flex flex-col',
               colors.border
             )}
             style={{ top: position.top, left: position.left }}
           >
-            <div className={cn('flex items-center justify-between p-3 border-b', colors.border)}>
-              <span className={cn('text-xs font-medium', colors.icon)}>
+            <div className={cn('flex items-center justify-between p-4 border-b', colors.border)}>
+              <span className={cn('text-sm font-medium', colors.icon)}>
                 {TYPE_LABELS[comment.type]}
               </span>
               <button
                 onClick={() => setShowPopover(false)}
                 className="p-1 hover:bg-muted rounded"
               >
-                <X size={14} />
+                <X size={16} />
               </button>
             </div>
-            <div className="p-4 overflow-y-auto flex-1">
+            <div className="p-5 overflow-y-auto flex-1">
               <MarkdownContent content={comment.content} className="text-sm leading-relaxed" />
             </div>
           </div>
