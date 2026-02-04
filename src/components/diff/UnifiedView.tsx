@@ -3,6 +3,8 @@ import type { DiffFile } from '../../../electron/git/types'
 import { TokenizedLine } from './TokenizedLine'
 import { pairChunkLines } from '@/lib/diff-line-pairing'
 import { DiffContainer } from './DiffContainer'
+import { CommentIndicator } from './CommentIndicator'
+import { useReviewStore } from '@/stores/review'
 import { useMemo } from 'react'
 
 interface UnifiedViewProps {
@@ -10,12 +12,31 @@ interface UnifiedViewProps {
 }
 
 export function UnifiedView({ file }: UnifiedViewProps) {
+  const { comments } = useReviewStore()
+
   const pairedLines = useMemo(() => {
     return file.chunks.flatMap((chunk) => ({
       chunk,
       lines: pairChunkLines(chunk),
     }))
   }, [file.chunks])
+
+  const fileComments = useMemo(() => {
+    const normalizedPath = file.path.replace(/^\.?\//, '')
+    return comments.filter(c => {
+      const normalizedCommentPath = c.file.replace(/^\.?\//, '')
+      return (
+        normalizedCommentPath === normalizedPath ||
+        normalizedCommentPath.endsWith('/' + normalizedPath) ||
+        normalizedPath.endsWith('/' + normalizedCommentPath)
+      )
+    })
+  }, [comments, file.path])
+
+  const getCommentForLine = (lineNumber: number | undefined) => {
+    if (!lineNumber) return null
+    return fileComments.find(c => c.line === lineNumber) || null
+  }
 
   return (
     <DiffContainer className="h-full overflow-auto font-mono text-sm">
@@ -45,6 +66,11 @@ export function UnifiedView({ file }: UnifiedViewProps) {
                 </span>
                 <span className="w-6 text-center select-none">
                   {line.type === 'add' ? '+' : line.type === 'remove' ? '-' : ' '}
+                </span>
+                <span className="w-6 flex items-center justify-center">
+                  {getCommentForLine(line.newLineNumber) && (
+                    <CommentIndicator comment={getCommentForLine(line.newLineNumber)!} />
+                  )}
                 </span>
                 <pre className="flex-1 px-2">
                   <TokenizedLine
