@@ -2,6 +2,7 @@ import { cn } from '@/lib/utils'
 import type { DiffFile } from '../../../electron/git/types'
 import { TokenizedLine } from './TokenizedLine'
 import { pairChunkLines } from '@/lib/diff-line-pairing'
+import { DiffContainer } from './DiffContainer'
 import { useMemo } from 'react'
 
 interface UnifiedViewProps {
@@ -17,7 +18,7 @@ export function UnifiedView({ file }: UnifiedViewProps) {
   }, [file.chunks])
 
   return (
-    <div className="h-full overflow-auto font-mono text-sm">
+    <DiffContainer className="h-full overflow-auto font-mono text-sm">
       <div className="px-4 py-2 bg-muted/50 border-b border-border sticky top-0">
         <span className="text-xs">{file.path}</span>
       </div>
@@ -58,6 +59,6 @@ export function UnifiedView({ file }: UnifiedViewProps) {
           </div>
         ))}
       </div>
-    </div>
+    </DiffContainer>
   )
 }

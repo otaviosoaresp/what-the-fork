@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils'
 import type { DiffFile, DiffLine } from '../../../electron/git/types'
 import { TokenizedLine } from './TokenizedLine'
+import { DiffContainer } from './DiffContainer'
 
 interface SplitViewProps {
   file: DiffFile
@@ -49,7 +50,7 @@ export function SplitView({ file }: SplitViewProps) {
   const lines = buildSideBySideLines(file)
 
   return (
-    <div className="h-full overflow-auto font-mono text-sm">
+    <DiffContainer className="h-full overflow-auto font-mono text-sm">
       <div className="px-4 py-2 bg-muted/50 border-b border-border sticky top-0 z-10">
         <span className="text-xs">{file.path}</span>
       </div>
@@ -105,6 +106,6 @@ export function SplitView({ file }: SplitViewProps) {
           ))}
         </div>
       </div>
-    </div>
+    </DiffContainer>
   )
 }
