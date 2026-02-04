@@ -37,5 +37,14 @@ contextBridge.exposeInMainWorld('electron', {
     getConfig: () => ipcRenderer.invoke('ai:get-config'),
     clearConfig: () => ipcRenderer.invoke('ai:clear-config'),
     testConnection: () => ipcRenderer.invoke('ai:test-connection')
+  },
+  review: {
+    getConfig: () => ipcRenderer.invoke('review:get-config'),
+    setConfig: (config: { provider?: string; glmApiKey?: string }) => ipcRenderer.invoke('review:set-config', config),
+    getRepoConfig: (repoPath: string) => ipcRenderer.invoke('review:get-repo-config', repoPath),
+    setRepoConfig: (repoPath: string, config: { reviewPrompt?: string; baseBranch?: string }) => ipcRenderer.invoke('review:set-repo-config', repoPath, config),
+    getAvailableProviders: () => ipcRenderer.invoke('review:get-available-providers'),
+    reviewBranch: (repoPath: string) => ipcRenderer.invoke('review:branch', repoPath),
+    ask: (repoPath: string, code: string, question: string) => ipcRenderer.invoke('review:ask', repoPath, code, question)
   }
 })
