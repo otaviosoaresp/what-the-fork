@@ -1,6 +1,22 @@
 import type { Branch, Commit, FileStatus, DiffFile, RemoteStatus } from '../../electron/git/types'
 import type { AIConfigState, GenerateCommitMessageResult } from '../../electron/ai/types'
 
+interface ReviewConfigState {
+  provider: string
+  glmApiKeyConfigured: boolean
+}
+
+interface RepoReviewConfig {
+  reviewPrompt: string
+  baseBranch: string
+}
+
+interface ReviewResponse {
+  content: string
+  provider: string
+  model?: string
+}
+
 export interface AIConfig {
   apiKey?: string
   model?: string
@@ -43,6 +59,15 @@ export interface ElectronAPI {
     getConfig: () => Promise<AIConfigState>
     clearConfig: () => Promise<void>
     testConnection: () => Promise<boolean>
+  }
+  review: {
+    getConfig: () => Promise<ReviewConfigState>
+    setConfig: (config: { provider?: string; glmApiKey?: string }) => Promise<void>
+    getRepoConfig: (repoPath: string) => Promise<RepoReviewConfig>
+    setRepoConfig: (repoPath: string, config: { reviewPrompt?: string; baseBranch?: string }) => Promise<void>
+    getAvailableProviders: () => Promise<string[]>
+    reviewBranch: (repoPath: string) => Promise<ReviewResponse>
+    ask: (repoPath: string, code: string, question: string) => Promise<ReviewResponse>
   }
 }
 
