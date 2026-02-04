@@ -47,6 +47,8 @@ contextBridge.exposeInMainWorld('electron', {
     reviewBranch: (repoPath: string, baseBranch: string, compareBranch: string, skipCache?: boolean) => ipcRenderer.invoke('review:branch', repoPath, baseBranch, compareBranch, skipCache),
     ask: (repoPath: string, code: string, question: string) => ipcRenderer.invoke('review:ask', repoPath, code, question),
     cancel: () => ipcRenderer.invoke('review:cancel'),
-    resetRepoPrompt: (repoPath: string) => ipcRenderer.invoke('review:reset-repo-prompt', repoPath)
+    resetRepoPrompt: (repoPath: string) => ipcRenderer.invoke('review:reset-repo-prompt', repoPath),
+    getHistory: (repoPath: string) => ipcRenderer.invoke('review:get-history', repoPath),
+    deleteHistoryEntry: (repoPath: string, timestamp: number) => ipcRenderer.invoke('review:delete-history-entry', repoPath, timestamp)
   }
 })

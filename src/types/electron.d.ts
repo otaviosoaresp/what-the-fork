@@ -34,6 +34,17 @@ export interface StructuredReview {
   generalNotes: string[]
 }
 
+export interface ReviewHistoryEntry {
+  timestamp: number
+  baseBranch: string
+  compareBranch: string
+  diffHash: string
+  provider: string
+  summary: string
+  comments: ReviewComment[]
+  generalNotes: string[]
+}
+
 export interface AIConfig {
   apiKey?: string
   model?: string
@@ -87,6 +98,8 @@ export interface ElectronAPI {
     ask: (repoPath: string, code: string, question: string) => Promise<ReviewResponse>
     cancel: () => Promise<void>
     resetRepoPrompt: (repoPath: string) => Promise<void>
+    getHistory: (repoPath: string) => Promise<ReviewHistoryEntry[]>
+    deleteHistoryEntry: (repoPath: string, timestamp: number) => Promise<void>
   }
 }
 

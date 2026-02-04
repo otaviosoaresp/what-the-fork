@@ -1,6 +1,7 @@
 import { ipcMain } from 'electron'
 import { getReviewConfigState, setReviewConfig, getRepoReviewConfig, setRepoReviewConfig, resetRepoReviewPrompt } from './review-config'
 import { getAvailableProviders, reviewBranch, askAboutCode, cancelActiveReview } from './provider-manager'
+import { getReviewHistory, deleteReviewEntry } from './review-history'
 import type { ReviewConfig, RepoReviewConfig } from './providers/types'
 
 export function registerReviewHandlers(): void {
@@ -38,5 +39,13 @@ export function registerReviewHandlers(): void {
 
   ipcMain.handle('review:reset-repo-prompt', async (_event, repoPath: string) => {
     resetRepoReviewPrompt(repoPath)
+  })
+
+  ipcMain.handle('review:get-history', async (_event, repoPath: string) => {
+    return getReviewHistory(repoPath)
+  })
+
+  ipcMain.handle('review:delete-history-entry', async (_event, repoPath: string, timestamp: number) => {
+    deleteReviewEntry(repoPath, timestamp)
   })
 }

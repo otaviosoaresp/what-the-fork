@@ -2,7 +2,7 @@ import Store from 'electron-store'
 import crypto from 'crypto'
 import type { StructuredReview, ReviewComment } from './providers/types'
 
-interface ReviewHistoryEntry {
+export interface ReviewHistoryEntry {
   timestamp: number
   baseBranch: string
   compareBranch: string
@@ -118,5 +118,24 @@ export function getReviewHistory(repoPath: string): ReviewHistoryEntry[] {
 export function clearReviewHistory(repoPath: string): void {
   const reviews = store.get('reviews')
   delete reviews[repoPath]
+  store.set('reviews', reviews)
+}
+
+export function deleteReviewEntry(repoPath: string, timestamp: number): void {
+  const reviews = store.get('reviews')
+  const repoHistory = reviews[repoPath]
+
+  if (!repoHistory) {
+    return
+  }
+
+  const filteredHistory = repoHistory.filter(entry => entry.timestamp !== timestamp)
+
+  if (filteredHistory.length === 0) {
+    delete reviews[repoPath]
+  } else {
+    reviews[repoPath] = filteredHistory
+  }
+
   store.set('reviews', reviews)
 }
