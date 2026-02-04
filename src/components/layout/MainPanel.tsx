@@ -4,6 +4,7 @@ import { DiffView } from '@/components/diff/DiffView'
 import { DiffHeader } from '@/components/diff/DiffHeader'
 import { FileList } from '@/components/diff/FileList'
 import { ComparisonHeader } from '@/components/branches/ComparisonHeader'
+import { ReviewPanel } from '@/components/review/ReviewPanel'
 
 export function MainPanel() {
   const { files, selectedFile, isLoading, error, baseBranch, compareBranch, mode } = useDiffStore()
@@ -56,13 +57,16 @@ export function MainPanel() {
   }
 
   return (
-    <main className="flex-1 flex flex-col overflow-hidden">
-      <ComparisonHeader />
-      <DiffHeader />
-      <div className="flex-1 overflow-hidden">
-        {selectedFile && <DiffView file={selectedFile} viewMode={diffViewMode} />}
+    <main className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <ComparisonHeader />
+        <DiffHeader />
+        <div className="flex-1 overflow-hidden">
+          {selectedFile && <DiffView file={selectedFile} viewMode={diffViewMode} />}
+        </div>
+        <FileList files={files} selectedFile={selectedFile} />
       </div>
-      <FileList files={files} selectedFile={selectedFile} />
+      <ReviewPanel />
     </main>
   )
 }
