@@ -5,6 +5,7 @@ import { useRepositoryStore } from '@/stores/repository'
 import { X, Loader2, FileCode, Trash2, AlertTriangle, RefreshCw } from 'lucide-react'
 import { parseCodeReferences, parseStructuredReview } from '@/lib/review-parser'
 import { MarkdownContent } from '@/components/shared/MarkdownContent'
+import { ReviewContextField } from './ReviewContextField'
 import { cn } from '@/lib/utils'
 import type { ReviewHistoryEntry } from '@/types/electron'
 
@@ -41,7 +42,8 @@ export function ReviewPanel() {
     setHistory,
     selectHistoryEntry,
     selectedHistoryEntry,
-    historyDiffChanged
+    historyDiffChanged,
+    setReviewContext
   } = useReviewStore()
   const { files, selectFile, baseBranch, compareBranch, mode } = useDiffStore()
   const { repoPath } = useRepositoryStore()
@@ -191,6 +193,8 @@ export function ReviewPanel() {
               </div>
             </div>
           )}
+
+          <ReviewContextField onContextChange={setReviewContext} />
 
           {references.length > 0 && content && !isLoading && (
             <div className="px-4 py-2 border-b border-border bg-muted/30">
