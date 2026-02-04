@@ -60,48 +60,52 @@ export function SelectionPopover({ text, rect, onClose }: SelectionPopoverProps)
       style={{ top, left, transform: 'translate(-50%, -100%)' }}
     >
       {showInput ? (
-        <div className="bg-background border border-border rounded-lg shadow-lg p-2 min-w-72">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-xs text-muted-foreground flex-1">
-              Perguntar sobre o codigo selecionado
-            </span>
+        <div className="bg-background border border-border rounded-lg shadow-lg w-96">
+          <div className="flex items-center justify-between p-3 border-b border-border">
+            <span className="text-sm font-medium">Perguntar sobre o codigo</span>
             <button
               onClick={() => {
                 setShowInput(false)
                 setQuestion('')
               }}
-              className="btn btn-ghost btn-icon p-1"
+              className="p-1 hover:bg-muted rounded"
             >
               <X size={14} />
             </button>
           </div>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Digite sua pergunta..."
-              className="input flex-1 text-sm"
-              autoFocus
-              disabled={isAsking}
-            />
-            <button
-              onClick={handleAsk}
-              disabled={!question.trim() || isAsking}
-              className="btn btn-primary btn-icon"
-            >
-              {isAsking ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : (
-                <Send size={16} />
-              )}
-            </button>
+
+          <div className="p-3 border-b border-border">
+            <div className="max-h-32 overflow-auto rounded bg-muted">
+              <pre className="text-xs font-mono p-3 whitespace-pre-wrap break-all text-muted-foreground">
+                {text.length > 500 ? text.slice(0, 500) + '...' : text}
+              </pre>
+            </div>
           </div>
-          <div className="mt-2 max-h-20 overflow-auto">
-            <pre className="text-xs text-muted-foreground bg-muted p-2 rounded whitespace-pre-wrap break-all">
-              {text.length > 200 ? text.slice(0, 200) + '...' : text}
-            </pre>
+
+          <div className="p-3">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Digite sua pergunta..."
+                className="input flex-1 text-sm"
+                autoFocus
+                disabled={isAsking}
+              />
+              <button
+                onClick={handleAsk}
+                disabled={!question.trim() || isAsking}
+                className="btn btn-primary btn-icon"
+              >
+                {isAsking ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <Send size={16} />
+                )}
+              </button>
+            </div>
           </div>
         </div>
       ) : (
