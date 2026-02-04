@@ -1,3 +1,5 @@
+import type { StructuredReview, ReviewComment, CommentType } from '../../electron/ai/providers/types'
+
 export interface CodeReference {
   file: string
   line: number
@@ -69,4 +71,53 @@ export function isCodeReference(text: string): { file: string; line: number } | 
     return { file: match[1], line: parseInt(match[2], 10) }
   }
   return null
+}
+
+const VALID_COMMENT_TYPES: CommentType[] = ['bug', 'performance', 'readability', 'suggestion', 'positive']
+
+export function parseStructuredReview(content: string): StructuredReview {
+  try {
+    const cleaned = content.trim().replace(/^```json?\s*/, '').replace(/\s*```$/, '')
+    const parsed = JSON.parse(cleaned)
+
+    if (typeof parsed.summary !== 'string') {
+      throw new Error('Invalid summary')
+    }
+
+    const comments: ReviewComment[] = []
+    if (Array.isArray(parsed.comments)) {
+      for (const c of parsed.comments) {
+        if (
+          typeof c.file === 'string' &&
+          typeof c.line === 'number' &&
+          VALID_COMMENT_TYPES.includes(c.type) &&
+          typeof c.content === 'string'
+        ) {
+          comments.push({
+            file: c.file,
+            line: c.line,
+            type: c.type,
+            content: c.content
+          })
+        }
+      }
+    }
+
+    const generalNotes: string[] = []
+    if (Array.isArray(parsed.generalNotes)) {
+      for (const note of parsed.generalNotes) {
+        if (typeof note === 'string') {
+          generalNotes.push(note)
+        }
+      }
+    }
+
+    return { summary: parsed.summary, comments, generalNotes }
+  } catch {
+    return {
+      summary: content,
+      comments: [],
+      generalNotes: []
+    }
+  }
 }
