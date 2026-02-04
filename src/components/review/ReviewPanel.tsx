@@ -1,9 +1,9 @@
-import { useMemo, useCallback, useEffect } from 'react'
+import { useMemo, useCallback, useEffect, useState } from 'react'
 import { useReviewStore } from '@/stores/review'
 import { useDiffStore } from '@/stores/diff'
 import { useRepositoryStore } from '@/stores/repository'
-import { X, Loader2, FileCode, Trash2, AlertTriangle } from 'lucide-react'
-import { parseCodeReferences } from '@/lib/review-parser'
+import { X, Loader2, FileCode, Trash2, AlertTriangle, RefreshCw } from 'lucide-react'
+import { parseCodeReferences, parseStructuredReview } from '@/lib/review-parser'
 import { MarkdownContent } from '@/components/shared/MarkdownContent'
 import { cn } from '@/lib/utils'
 import type { ReviewHistoryEntry } from '@/types/electron'
@@ -33,6 +33,8 @@ export function ReviewPanel() {
     generalNotes,
     closePanel,
     setLoading,
+    setStructuredContent,
+    setError,
     activeTab,
     setActiveTab,
     history,
@@ -41,8 +43,11 @@ export function ReviewPanel() {
     selectedHistoryEntry,
     historyDiffChanged
   } = useReviewStore()
-  const { files, selectFile } = useDiffStore()
+  const { files, selectFile, baseBranch, compareBranch, mode } = useDiffStore()
   const { repoPath } = useRepositoryStore()
+  const [isRequestingReview, setIsRequestingReview] = useState(false)
+
+  const canReview = mode === 'branches' && baseBranch && compareBranch
 
   const handleCancel = async () => {
     try {
@@ -107,6 +112,34 @@ export function ReviewPanel() {
       loadHistory()
     }
   }, [activeTab, loadHistory])
+
+  const handleNewReview = useCallback(async (skipCache = false) => {
+    if (!repoPath || !baseBranch || !compareBranch || isRequestingReview) return
+
+    setIsRequestingReview(true)
+    setActiveTab('review')
+    setLoading(true)
+
+    try {
+      const result = await window.electron.review.reviewBranch(repoPath, baseBranch, compareBranch, skipCache)
+      if (result.structured) {
+        setStructuredContent(
+          result.structured.summary,
+          result.structured.comments,
+          result.structured.generalNotes,
+          result.provider
+        )
+      } else {
+        const structured = parseStructuredReview(result.content)
+        setStructuredContent(structured.summary, structured.comments, structured.generalNotes, result.provider)
+      }
+      loadHistory()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Review failed')
+    } finally {
+      setIsRequestingReview(false)
+    }
+  }, [repoPath, baseBranch, compareBranch, isRequestingReview, setActiveTab, setLoading, setStructuredContent, setError, loadHistory])
 
   if (!isOpen) {
     return null
@@ -229,7 +262,29 @@ export function ReviewPanel() {
       )}
 
       {activeTab === 'history' && (
-        <div className="flex-1 overflow-auto p-4">
+        <div className="flex-1 overflow-auto flex flex-col">
+          {canReview && (
+            <div className="p-4 border-b border-border">
+              <button
+                onClick={() => handleNewReview(true)}
+                disabled={isRequestingReview || isLoading}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent/90 transition-colors disabled:opacity-50"
+              >
+                {isRequestingReview ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <RefreshCw size={16} />
+                )}
+                <span className="text-sm font-medium">
+                  {isRequestingReview ? 'Analisando...' : 'Novo Review'}
+                </span>
+              </button>
+              <p className="text-xs text-muted-foreground text-center mt-2">
+                {compareBranch} → {baseBranch}
+              </p>
+            </div>
+          )}
+          <div className="flex-1 overflow-auto p-4">
           {history.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center mt-8">
               Nenhum review no historico
@@ -271,6 +326,7 @@ export function ReviewPanel() {
               ))}
             </div>
           )}
+          </div>
         </div>
       )}
     </div>
