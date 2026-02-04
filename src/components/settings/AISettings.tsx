@@ -311,14 +311,14 @@ export function AISettings() {
               </div>
 
               <div>
-                <h3 className="text-sm font-medium mb-1">Review Prompt</h3>
+                <h3 className="text-sm font-medium mb-1">Instrucoes Adicionais</h3>
                 <p className="text-xs text-muted-foreground mb-3">
-                  Custom instructions for the AI reviewer (optional)
+                  Instrucoes extras para o reviewer (opcional). O formato de resposta JSON e mantido automaticamente.
                 </p>
                 <textarea
                   value={reviewPrompt}
                   onChange={e => setReviewPrompt(e.target.value)}
-                  placeholder="Additional context or instructions for code reviews..."
+                  placeholder="Ex: Foque em performance, ignore arquivos de teste..."
                   className="input w-full h-24 resize-none"
                   rows={4}
                 />

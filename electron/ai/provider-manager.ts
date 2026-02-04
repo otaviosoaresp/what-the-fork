@@ -2,7 +2,7 @@ import type { AIProvider, ReviewResponse } from './providers/types'
 import { ClaudeCodeProvider } from './providers/claude-code'
 import { OpenRouterProvider } from './providers/openrouter'
 import { GLMProvider } from './providers/glm'
-import { getReviewConfig, getRepoReviewConfig } from './review-config'
+import { getReviewConfig, getRepoReviewConfig, DEFAULT_REVIEW_PROMPT } from './review-config'
 import { executeGit } from '../git/executor'
 
 const providers: Record<string, AIProvider> = {
@@ -67,11 +67,18 @@ export async function reviewBranch(
 
   const context = `Review do diff entre ${baseBranch} e ${compareBranch}:\n\n${diff}`
 
+  // Always use default prompt (with JSON structure) as base
+  // If repo has custom additional instructions, append them
+  let prompt = DEFAULT_REVIEW_PROMPT
+  if (repoConfig.reviewPrompt && repoConfig.reviewPrompt !== DEFAULT_REVIEW_PROMPT) {
+    prompt = `${DEFAULT_REVIEW_PROMPT}\n\nInstrucoes adicionais do usuario:\n${repoConfig.reviewPrompt}`
+  }
+
   activeController = new AbortController()
 
   try {
     const result = await provider.review({
-      prompt: repoConfig.reviewPrompt,
+      prompt,
       context,
       repoPath,
       signal: activeController.signal
