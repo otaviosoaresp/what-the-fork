@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, dialog } from 'electron'
 import path from 'path'
 import { registerGitHandlers } from './git/ipc-handlers'
 import { registerAIHandlers } from './ai/ipc-handlers'
+import { registerReviewHandlers } from './ai/review-ipc'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -24,7 +25,7 @@ function createWindow(): void {
     mainWindow.loadURL('http://localhost:5173')
     mainWindow.webContents.openDevTools()
   } else {
-    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'))
+    mainWindow.loadFile(path.join(__dirname, '../../dist/index.html'))
   }
 
   mainWindow.on('closed', () => {
@@ -35,6 +36,7 @@ function createWindow(): void {
 app.whenReady().then(() => {
   registerGitHandlers()
   registerAIHandlers()
+  registerReviewHandlers()
   createWindow()
 })
 
