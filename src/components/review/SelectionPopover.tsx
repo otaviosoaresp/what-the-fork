@@ -21,7 +21,7 @@ export function SelectionPopover({ text, rect, onClose }: SelectionPopoverProps)
   const left = rect.left + rect.width / 2
 
   const handleAsk = async () => {
-    if (!repoPath || !question.trim() || isAsking) return
+    if (!repoPath || !question.trim() || isAsking || !text) return
 
     setIsAsking(true)
     openPanel()
@@ -55,6 +55,7 @@ export function SelectionPopover({ text, rect, onClose }: SelectionPopoverProps)
 
   return createPortal(
     <div
+      data-popover="selection"
       className="fixed z-50 flex flex-col items-center"
       style={{ top, left, transform: 'translate(-50%, -100%)' }}
     >

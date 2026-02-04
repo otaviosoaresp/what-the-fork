@@ -7,67 +7,66 @@ export interface CodeReference {
 
 export function parseCodeReferences(content: string): CodeReference[] {
   const references: CodeReference[] = []
+  const seen = new Set<string>()
 
-  // Pattern: `file:line` or `file.ext:line`
-  const pattern = /`([^`]+?):(\d+)`/g
+  const addReference = (file: string, line: number, matchIndex: number) => {
+    const key = `${file}:${line}`
+    if (seen.has(key)) return
+    seen.add(key)
+
+    const start = Math.max(0, matchIndex - 50)
+    const end = Math.min(content.length, matchIndex + 50)
+    let text = content.slice(start, end).trim()
+    if (start > 0) text = '...' + text
+    if (end < content.length) text = text + '...'
+
+    references.push({ file, line, text, index: matchIndex })
+  }
+
+  // Pattern 1: `file:line` or `file.ext:line` (backtick format)
+  const backtickPattern = /`([^`\s]+):(\d+)`/g
   let match
-
-  while ((match = pattern.exec(content)) !== null) {
-    const file = match[1]
-    const line = parseInt(match[2], 10)
-
-    // Get surrounding context (up to 50 chars before and after)
-    const start = Math.max(0, match.index - 50)
-    const end = Math.min(content.length, match.index + match[0].length + 50)
-    let text = content.slice(start, end).trim()
-
-    // Clean up the context
-    if (start > 0) text = '...' + text
-    if (end < content.length) text = text + '...'
-
-    references.push({
-      file,
-      line,
-      text,
-      index: match.index
-    })
+  while ((match = backtickPattern.exec(content)) !== null) {
+    addReference(match[1], parseInt(match[2], 10), match.index)
   }
 
-  // Also try pattern: file.ext line X or linha X
-  const linePattern = /\b([a-zA-Z0-9_\-/.]+\.[a-zA-Z]+)\s+(?:line|linha)\s+(\d+)/gi
+  // Pattern 2: **file:line** (bold format)
+  const boldPattern = /\*\*([^*\s]+):(\d+)\*\*/g
+  while ((match = boldPattern.exec(content)) !== null) {
+    addReference(match[1], parseInt(match[2], 10), match.index)
+  }
+
+  // Pattern 3: file.ext:line (plain format with extension)
+  const plainPattern = /\b([a-zA-Z0-9_\-/]+\.[a-zA-Z]{1,5}):(\d+)\b/g
+  while ((match = plainPattern.exec(content)) !== null) {
+    addReference(match[1], parseInt(match[2], 10), match.index)
+  }
+
+  // Pattern 4: "line X" or "linha X" after a file mention
+  const linePattern = /\b([a-zA-Z0-9_\-/]+\.[a-zA-Z]{1,5})\s+(?:line|linha|L)\s*(\d+)/gi
   while ((match = linePattern.exec(content)) !== null) {
-    const file = match[1]
-    const line = parseInt(match[2], 10)
-
-    // Avoid duplicates
-    if (references.some(r => r.file === file && r.line === line)) continue
-
-    const start = Math.max(0, match.index - 30)
-    const end = Math.min(content.length, match.index + match[0].length + 30)
-    let text = content.slice(start, end).trim()
-    if (start > 0) text = '...' + text
-    if (end < content.length) text = text + '...'
-
-    references.push({
-      file,
-      line,
-      text,
-      index: match.index
-    })
+    addReference(match[1], parseInt(match[2], 10), match.index)
   }
 
-  // Sort by index in the content
+  // Pattern 5: "na linha X" or "at line X" (line number only, file from context)
+  const looseLinePattern = /(?:na\s+linha|at\s+line|linha|line)\s+(\d+)/gi
+  while ((match = looseLinePattern.exec(content)) !== null) {
+    const line = parseInt(match[1], 10)
+    const contextBefore = content.slice(Math.max(0, match.index - 100), match.index)
+    const fileMatch = contextBefore.match(/\b([a-zA-Z0-9_\-/]+\.[a-zA-Z]{1,5})\b/g)
+    if (fileMatch) {
+      const file = fileMatch[fileMatch.length - 1]
+      addReference(file, line, match.index)
+    }
+  }
+
   return references.sort((a, b) => a.index - b.index)
 }
 
-export function groupReferencesByFile(references: CodeReference[]): Map<string, CodeReference[]> {
-  const grouped = new Map<string, CodeReference[]>()
-
-  for (const ref of references) {
-    const existing = grouped.get(ref.file) ?? []
-    existing.push(ref)
-    grouped.set(ref.file, existing)
+export function isCodeReference(text: string): { file: string; line: number } | null {
+  const match = text.match(/^([^:]+):(\d+)$/)
+  if (match) {
+    return { file: match[1], line: parseInt(match[2], 10) }
   }
-
-  return grouped
+  return null
 }

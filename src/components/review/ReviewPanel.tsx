@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
 import { useReviewStore } from '@/stores/review'
 import { useDiffStore } from '@/stores/diff'
-import { X, Loader2, FileCode, ExternalLink } from 'lucide-react'
-import { parseCodeReferences } from '@/lib/review-parser'
+import { X, Loader2, FileCode } from 'lucide-react'
+import { parseCodeReferences, isCodeReference } from '@/lib/review-parser'
 
 interface MarkdownContentProps {
   content: string
@@ -105,20 +105,18 @@ function formatInlineMarkdown(
       }
 
       const codeContent = inlineCodeMatch[2]
-      const refMatch = codeContent.match(/^(.+):(\d+)$/)
+      const ref = isCodeReference(codeContent)
 
-      if (refMatch && onReferenceClick) {
-        const file = refMatch[1]
-        const line = parseInt(refMatch[2], 10)
+      if (ref && onReferenceClick) {
         parts.push(
           <button
             key={`${keyPrefix}-code-${keyIndex}`}
-            onClick={() => onReferenceClick(file, line)}
-            className="bg-accent/20 text-accent px-1.5 py-0.5 rounded text-xs font-mono hover:bg-accent/30 transition-colors inline-flex items-center gap-1"
-            title={`Ir para ${file} linha ${line}`}
+            onClick={() => onReferenceClick(ref.file, ref.line)}
+            className="bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded text-xs font-mono hover:bg-blue-500/30 hover:underline transition-colors inline-flex items-center gap-1 border border-blue-500/30"
+            title={`Ir para ${ref.file} linha ${ref.line}`}
           >
+            <FileCode size={10} />
             {codeContent}
-            <ExternalLink size={10} />
           </button>
         )
       } else {
@@ -210,11 +208,18 @@ export function ReviewPanel() {
   }, [content])
 
   const handleReferenceClick = (filePath: string, _line: number) => {
-    const file = files.find(f =>
-      f.path === filePath ||
-      f.path.endsWith('/' + filePath) ||
-      filePath.endsWith('/' + f.path)
-    )
+    const normalizedPath = filePath.replace(/^\.?\//, '')
+
+    const file = files.find(f => {
+      const normalizedFilePath = f.path.replace(/^\.?\//, '')
+      return (
+        normalizedFilePath === normalizedPath ||
+        normalizedFilePath.endsWith('/' + normalizedPath) ||
+        normalizedFilePath.endsWith(normalizedPath) ||
+        normalizedPath.endsWith(normalizedFilePath)
+      )
+    })
+
     if (file) {
       selectFile(file)
     }
