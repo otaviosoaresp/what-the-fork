@@ -8,6 +8,7 @@ import { useReviewStore } from '@/stores/review'
 import { useDiffStore } from '@/stores/diff'
 import { cn } from '@/lib/utils'
 import { SettingsModal } from '@/components/settings/SettingsModal'
+import { AccountSelector } from '@/components/header/AccountSelector'
 import { Settings, MessageSquare, Loader2 } from 'lucide-react'
 import { parseStructuredReview } from '@/lib/review-parser'
 
@@ -197,6 +198,8 @@ export function Header() {
           </>,
           document.body
         )}
+
+        <AccountSelector />
       </div>
 
       <div className="flex items-center gap-2">
