@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useDiffStore } from '@/stores/diff'
 import { useUIStore } from '@/stores/ui'
+import { useReviewStore } from '@/stores/review'
 import { cn } from '@/lib/utils'
+import { MessageCircle } from 'lucide-react'
 import type { DiffFile } from '../../../electron/git/types'
 
 interface FileListProps {
@@ -12,6 +14,7 @@ interface FileListProps {
 export function FileList({ files, selectedFile }: FileListProps) {
   const { selectFile } = useDiffStore()
   const { fileListHeight, setFileListHeight } = useUIStore()
+  const { comments } = useReviewStore()
   const [isDragging, setIsDragging] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const containerRef = useRef<HTMLDivElement>(null)
@@ -23,6 +26,18 @@ export function FileList({ files, selectedFile }: FileListProps) {
     const query = searchQuery.toLowerCase()
     return files.filter(f => f.path.toLowerCase().includes(query))
   }, [files, searchQuery])
+
+  const getCommentCount = useCallback((filePath: string) => {
+    const normalizedPath = filePath.replace(/^\.?\//, '')
+    return comments.filter(c => {
+      const normalizedCommentPath = c.file.replace(/^\.?\//, '')
+      return (
+        normalizedCommentPath === normalizedPath ||
+        normalizedCommentPath.endsWith('/' + normalizedPath) ||
+        normalizedPath.endsWith('/' + normalizedCommentPath)
+      )
+    }).length
+  }, [comments])
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
@@ -105,22 +120,33 @@ export function FileList({ files, selectedFile }: FileListProps) {
         className="overflow-y-auto"
         style={{ height: `${fileListHeight}px` }}
       >
-        {filteredFiles.map(file => (
-          <button
-            key={file.path}
-            onClick={() => selectFile(file)}
-            className={cn(
-              'w-full flex items-center justify-between px-4 py-1.5 text-sm hover:bg-muted transition-colors',
-              selectedFile?.path === file.path && 'bg-muted'
-            )}
-          >
-            <span className="truncate font-mono text-xs">{file.path}</span>
-            <span className="flex items-center gap-2 text-xs flex-shrink-0 ml-2">
-              <span className="text-success">+{file.additions}</span>
-              <span className="text-destructive">-{file.deletions}</span>
-            </span>
-          </button>
-        ))}
+        {filteredFiles.map(file => {
+          const commentCount = getCommentCount(file.path)
+          return (
+            <button
+              key={file.path}
+              onClick={() => selectFile(file)}
+              className={cn(
+                'w-full flex items-center justify-between px-4 py-1.5 text-sm hover:bg-muted transition-colors',
+                selectedFile?.path === file.path && 'bg-muted'
+              )}
+            >
+              <span className="truncate font-mono text-xs flex items-center gap-2">
+                {file.path}
+                {commentCount > 0 && (
+                  <span className="flex items-center gap-0.5 text-yellow-400" title={`${commentCount} comentario(s)`}>
+                    <MessageCircle size={10} />
+                    <span className="text-[10px]">{commentCount}</span>
+                  </span>
+                )}
+              </span>
+              <span className="flex items-center gap-2 text-xs flex-shrink-0 ml-2">
+                <span className="text-success">+{file.additions}</span>
+                <span className="text-destructive">-{file.deletions}</span>
+              </span>
+            </button>
+          )
+        })}
       </div>
     </div>
   )

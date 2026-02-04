@@ -119,8 +119,18 @@ export function Header() {
     setLoading(true)
     try {
       const result = await window.electron.review.reviewBranch(repoPath, baseBranch, compareBranch)
-      const structured = parseStructuredReview(result.content)
-      setStructuredContent(structured.summary, structured.comments, structured.generalNotes, result.provider)
+      if (result.structured) {
+        setStructuredContent(
+          result.structured.summary,
+          result.structured.comments,
+          result.structured.generalNotes,
+          result.provider
+        )
+      } else {
+        // Fallback to parsing if structured not available
+        const structured = parseStructuredReview(result.content)
+        setStructuredContent(structured.summary, structured.comments, structured.generalNotes, result.provider)
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Review failed')
     } finally {

@@ -1,8 +1,69 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { createPortal } from 'react-dom'
 import { MessageCircle, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { ReviewComment } from '@/types/electron'
+
+function formatMarkdown(text: string): React.ReactNode[] {
+  const parts: React.ReactNode[] = []
+  let remaining = text
+  let key = 0
+
+  while (remaining.length > 0) {
+    // Code blocks
+    const codeMatch = remaining.match(/^(.*?)`([^`]+)`(.*)$/s)
+    if (codeMatch) {
+      if (codeMatch[1]) {
+        parts.push(...formatEmphasis(codeMatch[1], key))
+        key += 10
+      }
+      parts.push(
+        <code key={`code-${key}`} className="bg-muted px-1 py-0.5 rounded text-xs font-mono">
+          {codeMatch[2]}
+        </code>
+      )
+      key++
+      remaining = codeMatch[3]
+      continue
+    }
+
+    parts.push(...formatEmphasis(remaining, key))
+    break
+  }
+
+  return parts
+}
+
+function formatEmphasis(text: string, startKey: number): React.ReactNode[] {
+  const parts: React.ReactNode[] = []
+  let remaining = text
+  let key = startKey
+
+  while (remaining.length > 0) {
+    // Bold
+    const boldMatch = remaining.match(/^(.*?)\*\*([^*]+)\*\*(.*)$/s)
+    if (boldMatch) {
+      if (boldMatch[1]) parts.push(<span key={`t-${key++}`}>{boldMatch[1]}</span>)
+      parts.push(<strong key={`b-${key++}`} className="font-semibold">{boldMatch[2]}</strong>)
+      remaining = boldMatch[3]
+      continue
+    }
+
+    // Italic
+    const italicMatch = remaining.match(/^(.*?)\*([^*]+)\*(.*)$/s)
+    if (italicMatch) {
+      if (italicMatch[1]) parts.push(<span key={`t-${key++}`}>{italicMatch[1]}</span>)
+      parts.push(<em key={`i-${key++}`} className="italic">{italicMatch[2]}</em>)
+      remaining = italicMatch[3]
+      continue
+    }
+
+    if (remaining) parts.push(<span key={`t-${key++}`}>{remaining}</span>)
+    break
+  }
+
+  return parts
+}
 
 interface CommentIndicatorProps {
   comment: ReviewComment
@@ -28,6 +89,7 @@ export function CommentIndicator({ comment }: CommentIndicatorProps) {
   const [showPopover, setShowPopover] = useState(false)
   const [position, setPosition] = useState({ top: 0, left: 0 })
   const colors = TYPE_COLORS[comment.type] || TYPE_COLORS.suggestion
+  const formattedContent = useMemo(() => formatMarkdown(comment.content), [comment.content])
 
   const handleClick = (e: React.MouseEvent) => {
     const rect = e.currentTarget.getBoundingClientRect()
@@ -67,8 +129,8 @@ export function CommentIndicator({ comment }: CommentIndicatorProps) {
               <X size={12} />
             </button>
           </div>
-          <div className="p-3 text-sm">
-            {comment.content}
+          <div className="p-3 text-sm leading-relaxed">
+            {formattedContent}
           </div>
         </div>,
         document.body

@@ -9,6 +9,8 @@ export interface ReviewResponse {
   content: string
   provider: string
   model?: string
+  cached?: boolean
+  structured?: StructuredReview
 }
 
 export interface AIProvider {

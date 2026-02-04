@@ -24,8 +24,8 @@ export function registerReviewHandlers(): void {
     return getAvailableProviders()
   })
 
-  ipcMain.handle('review:branch', async (_event, repoPath: string, baseBranch: string, compareBranch: string) => {
-    return reviewBranch(repoPath, baseBranch, compareBranch)
+  ipcMain.handle('review:branch', async (_event, repoPath: string, baseBranch: string, compareBranch: string, skipCache = false) => {
+    return reviewBranch(repoPath, baseBranch, compareBranch, skipCache)
   })
 
   ipcMain.handle('review:ask', async (_event, repoPath: string, code: string, question: string) => {

@@ -44,7 +44,7 @@ contextBridge.exposeInMainWorld('electron', {
     getRepoConfig: (repoPath: string) => ipcRenderer.invoke('review:get-repo-config', repoPath),
     setRepoConfig: (repoPath: string, config: { reviewPrompt?: string; baseBranch?: string }) => ipcRenderer.invoke('review:set-repo-config', repoPath, config),
     getAvailableProviders: () => ipcRenderer.invoke('review:get-available-providers'),
-    reviewBranch: (repoPath: string, baseBranch: string, compareBranch: string) => ipcRenderer.invoke('review:branch', repoPath, baseBranch, compareBranch),
+    reviewBranch: (repoPath: string, baseBranch: string, compareBranch: string, skipCache?: boolean) => ipcRenderer.invoke('review:branch', repoPath, baseBranch, compareBranch, skipCache),
     ask: (repoPath: string, code: string, question: string) => ipcRenderer.invoke('review:ask', repoPath, code, question),
     cancel: () => ipcRenderer.invoke('review:cancel'),
     resetRepoPrompt: (repoPath: string) => ipcRenderer.invoke('review:reset-repo-prompt', repoPath)

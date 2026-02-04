@@ -15,6 +15,8 @@ interface ReviewResponse {
   content: string
   provider: string
   model?: string
+  cached?: boolean
+  structured?: StructuredReview
 }
 
 export type CommentType = 'bug' | 'performance' | 'readability' | 'suggestion' | 'positive'
@@ -81,7 +83,7 @@ export interface ElectronAPI {
     getRepoConfig: (repoPath: string) => Promise<RepoReviewConfig>
     setRepoConfig: (repoPath: string, config: { reviewPrompt?: string; baseBranch?: string }) => Promise<void>
     getAvailableProviders: () => Promise<string[]>
-    reviewBranch: (repoPath: string, baseBranch: string, compareBranch: string) => Promise<ReviewResponse>
+    reviewBranch: (repoPath: string, baseBranch: string, compareBranch: string, skipCache?: boolean) => Promise<ReviewResponse>
     ask: (repoPath: string, code: string, question: string) => Promise<ReviewResponse>
     cancel: () => Promise<void>
     resetRepoPrompt: (repoPath: string) => Promise<void>
