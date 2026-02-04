@@ -6,7 +6,7 @@ export class ClaudeCodeProvider implements AIProvider {
 
   isAvailable(): Promise<boolean> {
     return new Promise((resolve) => {
-      const childProcess: ChildProcess = spawn('claude', ['--version'], { shell: true })
+      const childProcess: ChildProcess = spawn('claude', ['--version'])
 
       const timeout = setTimeout(() => {
         childProcess.kill()
@@ -33,17 +33,25 @@ export class ClaudeCodeProvider implements AIProvider {
 
       const childProcess: ChildProcess = spawn(
         'claude',
-        ['--print', '--output-format', 'text', '-p', fullPrompt],
-        {
-          cwd: request.repoPath,
-          shell: true
-        }
+        ['--print', '--output-format', 'text'],
+        { cwd: request.repoPath }
       )
 
       const timeout = setTimeout(() => {
         childProcess.kill()
         reject(new Error('Claude Code CLI timed out after 120 seconds'))
       }, 120000)
+
+      if (request.signal) {
+        request.signal.addEventListener('abort', () => {
+          childProcess.kill()
+          clearTimeout(timeout)
+          reject(new Error('Review cancelled'))
+        })
+      }
+
+      childProcess.stdin?.write(fullPrompt)
+      childProcess.stdin?.end()
 
       childProcess.stdout?.on('data', (chunk: Buffer) => {
         stdoutChunks.push(chunk)

@@ -1,9 +1,10 @@
 import Store from 'electron-store'
+import { safeStorage } from 'electron'
 import type { ReviewConfig, RepoReviewConfig } from './providers/types'
 
 interface StoreSchema {
   reviewProvider: 'claude-code' | 'openrouter' | 'glm'
-  glmApiKey: string
+  glmApiKeyEncrypted: string
   repoConfigs: Record<string, RepoReviewConfig>
 }
 
@@ -11,11 +12,31 @@ const store = new Store<StoreSchema>({
   name: 'review-config',
   defaults: {
     reviewProvider: 'openrouter',
-    glmApiKey: '',
+    glmApiKeyEncrypted: '',
     repoConfigs: {}
-  },
-  encryptionKey: 'git-branch-viewer-secure-key'
+  }
 })
+
+function encryptApiKey(key: string): string {
+  if (!key) return ''
+  if (!safeStorage.isEncryptionAvailable()) {
+    return Buffer.from(key).toString('base64')
+  }
+  return safeStorage.encryptString(key).toString('base64')
+}
+
+function decryptApiKey(encrypted: string): string {
+  if (!encrypted) return ''
+  const buffer = Buffer.from(encrypted, 'base64')
+  if (!safeStorage.isEncryptionAvailable()) {
+    return buffer.toString('utf-8')
+  }
+  try {
+    return safeStorage.decryptString(buffer)
+  } catch {
+    return ''
+  }
+}
 
 export const DEFAULT_REVIEW_PROMPT = `Voce e um code reviewer experiente. Analise o diff fornecido e retorne um JSON valido com a seguinte estrutura:
 
@@ -51,7 +72,7 @@ Regras:
 export function getReviewConfig(): ReviewConfig {
   return {
     provider: store.get('reviewProvider'),
-    glmApiKey: store.get('glmApiKey')
+    glmApiKey: decryptApiKey(store.get('glmApiKeyEncrypted'))
   }
 }
 
@@ -60,7 +81,7 @@ export function setReviewConfig(config: Partial<ReviewConfig>): void {
     store.set('reviewProvider', config.provider)
   }
   if (config.glmApiKey !== undefined) {
-    store.set('glmApiKey', config.glmApiKey)
+    store.set('glmApiKeyEncrypted', encryptApiKey(config.glmApiKey))
   }
 }
 
@@ -100,7 +121,7 @@ export function getReviewConfigState(): {
   provider: string
   glmApiKeyConfigured: boolean
 } {
-  const glmApiKey = store.get('glmApiKey')
+  const glmApiKey = decryptApiKey(store.get('glmApiKeyEncrypted'))
   return {
     provider: store.get('reviewProvider'),
     glmApiKeyConfigured: glmApiKey.length > 0
