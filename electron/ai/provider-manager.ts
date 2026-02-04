@@ -145,17 +145,18 @@ export async function reviewBranch(
     prompt = `${DEFAULT_REVIEW_PROMPT}\n\nInstrucoes adicionais do usuario:\n${repoConfig.reviewPrompt}`
   }
 
-  activeController = new AbortController()
+  cancelActiveReview()
+  const controller = new AbortController()
+  activeController = controller
 
   try {
     const result = await provider.review({
       prompt,
       context,
       repoPath,
-      signal: activeController.signal
+      signal: controller.signal
     })
 
-    // Parse and cache the result
     const structured = parseStructuredReview(result.content)
     saveReviewToHistory(repoPath, baseBranch, compareBranch, diff, providerName, structured)
 
@@ -164,7 +165,9 @@ export async function reviewBranch(
       structured
     }
   } finally {
-    activeController = null
+    if (activeController === controller) {
+      activeController = null
+    }
   }
 }
 
@@ -188,17 +191,21 @@ export async function askAboutCode(
   const prompt = 'Voce e um assistente de programacao. Responda de forma clara e objetiva. Use markdown para formatacao.'
   const context = `Codigo:\n\`\`\`\n${code}\n\`\`\`\n\nPergunta: ${question}`
 
-  activeController = new AbortController()
+  cancelActiveReview()
+  const controller = new AbortController()
+  activeController = controller
 
   try {
     const result = await provider.review({
       prompt,
       context,
       repoPath,
-      signal: activeController.signal
+      signal: controller.signal
     })
     return result
   } finally {
-    activeController = null
+    if (activeController === controller) {
+      activeController = null
+    }
   }
 }
