@@ -45,6 +45,44 @@ export interface ReviewHistoryEntry {
   generalNotes: string[]
 }
 
+interface GitHubAccount {
+  username: string
+  isActive: boolean
+}
+
+interface PullRequest {
+  number: number
+  title: string
+  author: string
+  state: 'open' | 'closed' | 'merged'
+  isDraft: boolean
+  createdAt: string
+  updatedAt: string
+  headBranch: string
+  baseBranch: string
+  reviewStatus: {
+    approved: number
+    changesRequested: number
+    pending: string[]
+  }
+  checksStatus: 'success' | 'failure' | 'pending' | 'neutral' | null
+  labels: string[]
+  milestone: string | null
+  commentsCount: number
+  mergeable: boolean | null
+  url: string
+}
+
+interface Issue {
+  number: number
+  title: string
+  body: string
+  state: 'open' | 'closed'
+  author: string
+  labels: string[]
+  url: string
+}
+
 export interface AIConfig {
   apiKey?: string
   model?: string
@@ -100,6 +138,23 @@ export interface ElectronAPI {
     resetRepoPrompt: (repoPath: string) => Promise<void>
     getHistory: (repoPath: string) => Promise<ReviewHistoryEntry[]>
     deleteHistoryEntry: (repoPath: string, timestamp: number) => Promise<void>
+  }
+  github: {
+    isAvailable: () => Promise<boolean>
+    accounts: {
+      list: () => Promise<GitHubAccount[]>
+      switch: (username: string) => Promise<void>
+      getForRepo: (repoKey: string) => Promise<string | null>
+      setForRepo: (repoKey: string, username: string) => Promise<void>
+    }
+    pr: {
+      list: (options: { repo: string; type: 'created' | 'review-requested' | 'all' }) => Promise<PullRequest[]>
+      forBranch: (options: { repo: string; branch: string }) => Promise<PullRequest | null>
+    }
+    issue: {
+      get: (options: { repo: string; number: number }) => Promise<Issue | null>
+    }
+    openUrl: (url: string) => Promise<void>
   }
 }
 
