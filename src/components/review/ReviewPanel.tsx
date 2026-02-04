@@ -43,6 +43,7 @@ export function ReviewPanel() {
     selectHistoryEntry,
     selectedHistoryEntry,
     historyDiffChanged,
+    reviewContext,
     setReviewContext
   } = useReviewStore()
   const { files, selectFile, baseBranch, compareBranch, mode } = useDiffStore()
@@ -123,7 +124,7 @@ export function ReviewPanel() {
     setLoading(true)
 
     try {
-      const result = await window.electron.review.reviewBranch(repoPath, baseBranch, compareBranch, skipCache)
+      const result = await window.electron.review.reviewBranch(repoPath, baseBranch, compareBranch, skipCache, reviewContext)
       if (result.structured) {
         setStructuredContent(
           result.structured.summary,
@@ -141,7 +142,7 @@ export function ReviewPanel() {
     } finally {
       setIsRequestingReview(false)
     }
-  }, [repoPath, baseBranch, compareBranch, isRequestingReview, setActiveTab, setLoading, setStructuredContent, setError, loadHistory])
+  }, [repoPath, baseBranch, compareBranch, isRequestingReview, reviewContext, setActiveTab, setLoading, setStructuredContent, setError, loadHistory])
 
   if (!isOpen) {
     return null

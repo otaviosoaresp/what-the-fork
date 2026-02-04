@@ -26,7 +26,7 @@ export function Header() {
   const addToast = useToastStore((s) => s.addToast)
   const { diffViewMode, setDiffViewMode, recentRepositories, addRecentRepository } = useUIStore()
   const { files, baseBranch, compareBranch, mode } = useDiffStore()
-  const { isOpen, setLoading, setStructuredContent, setError, openPanel } = useReviewStore()
+  const { isOpen, setLoading, setStructuredContent, setError, openPanel, reviewContext } = useReviewStore()
 
   const otherRepos = recentRepositories.filter(p => p !== repoPath)
 
@@ -119,7 +119,7 @@ export function Header() {
     openPanel()
     setLoading(true)
     try {
-      const result = await window.electron.review.reviewBranch(repoPath, baseBranch, compareBranch)
+      const result = await window.electron.review.reviewBranch(repoPath, baseBranch, compareBranch, false, reviewContext)
       if (result.structured) {
         setStructuredContent(
           result.structured.summary,

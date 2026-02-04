@@ -132,7 +132,7 @@ export interface ElectronAPI {
     getRepoConfig: (repoPath: string) => Promise<RepoReviewConfig>
     setRepoConfig: (repoPath: string, config: { reviewPrompt?: string; baseBranch?: string }) => Promise<void>
     getAvailableProviders: () => Promise<string[]>
-    reviewBranch: (repoPath: string, baseBranch: string, compareBranch: string, skipCache?: boolean) => Promise<ReviewResponse>
+    reviewBranch: (repoPath: string, baseBranch: string, compareBranch: string, skipCache?: boolean, taskContext?: { type: 'issue' | 'manual'; issue?: { number: number; title: string; body: string }; text?: string } | null) => Promise<ReviewResponse>
     ask: (repoPath: string, code: string, question: string) => Promise<ReviewResponse>
     cancel: () => Promise<void>
     resetRepoPrompt: (repoPath: string) => Promise<void>

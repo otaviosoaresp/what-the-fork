@@ -88,11 +88,18 @@ export async function getAvailableProviders(): Promise<string[]> {
   return availableProviders
 }
 
+interface TaskContext {
+  type: 'issue' | 'manual'
+  issue?: { number: number; title: string; body: string }
+  text?: string
+}
+
 export async function reviewBranch(
   repoPath: string,
   baseBranch: string,
   compareBranch: string,
-  skipCache = false
+  skipCache = false,
+  taskContext?: TaskContext | null
 ): Promise<ReviewResponse> {
   const config = getReviewConfig()
   const repoConfig = getRepoReviewConfig(repoPath)
@@ -138,12 +145,39 @@ export async function reviewBranch(
 
   const context = `Review do diff entre ${baseBranch} e ${compareBranch}:\n\n${diff}`
 
-  // Always use default prompt (with JSON structure) as base
-  // If repo has custom additional instructions, append them
-  let prompt = DEFAULT_REVIEW_PROMPT
-  if (repoConfig.reviewPrompt && repoConfig.reviewPrompt !== DEFAULT_REVIEW_PROMPT) {
-    prompt = `${DEFAULT_REVIEW_PROMPT}\n\nInstrucoes adicionais do usuario:\n${repoConfig.reviewPrompt}`
+  let contextSection = ''
+  if (taskContext) {
+    if (taskContext.type === 'issue' && taskContext.issue) {
+      contextSection = `
+## Task Context
+Issue #${taskContext.issue.number}: ${taskContext.issue.title}
+
+${taskContext.issue.body}
+
+---
+
+Review the code changes and evaluate if they properly address the issue requirements.
+
+`
+    } else if (taskContext.type === 'manual' && taskContext.text) {
+      contextSection = `
+## Task Context
+${taskContext.text}
+
+---
+
+Review the code changes and evaluate if they properly address these requirements.
+
+`
+    }
   }
+
+  let basePrompt = DEFAULT_REVIEW_PROMPT
+  if (repoConfig.reviewPrompt && repoConfig.reviewPrompt !== DEFAULT_REVIEW_PROMPT) {
+    basePrompt = `${DEFAULT_REVIEW_PROMPT}\n\nInstrucoes adicionais do usuario:\n${repoConfig.reviewPrompt}`
+  }
+
+  const prompt = contextSection + basePrompt
 
   cancelActiveReview()
   const controller = new AbortController()
