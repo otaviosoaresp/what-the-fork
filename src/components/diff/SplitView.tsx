@@ -1,7 +1,10 @@
+import { useMemo } from 'react'
 import { cn } from '@/lib/utils'
 import type { DiffFile, DiffLine } from '../../../electron/git/types'
 import { TokenizedLine } from './TokenizedLine'
 import { DiffContainer } from './DiffContainer'
+import { CommentIndicator } from './CommentIndicator'
+import { useReviewStore } from '@/stores/review'
 
 interface SplitViewProps {
   file: DiffFile
@@ -47,7 +50,25 @@ function buildSideBySideLines(file: DiffFile): SideBySideLine[] {
 }
 
 export function SplitView({ file }: SplitViewProps) {
+  const { comments } = useReviewStore()
   const lines = buildSideBySideLines(file)
+
+  const fileComments = useMemo(() => {
+    const normalizedPath = file.path.replace(/^\.?\//, '')
+    return comments.filter(c => {
+      const normalizedCommentPath = c.file.replace(/^\.?\//, '')
+      return (
+        normalizedCommentPath === normalizedPath ||
+        normalizedCommentPath.endsWith('/' + normalizedPath) ||
+        normalizedPath.endsWith('/' + normalizedCommentPath)
+      )
+    })
+  }, [comments, file.path])
+
+  const getCommentForLine = (lineNumber: number | undefined) => {
+    if (!lineNumber) return null
+    return fileComments.find(c => c.line === lineNumber) || null
+  }
 
   return (
     <DiffContainer className="h-full overflow-auto font-mono text-sm">
@@ -91,6 +112,11 @@ export function SplitView({ file }: SplitViewProps) {
             >
               <span className="w-12 px-2 text-right text-muted-foreground text-xs select-none border-r border-border">
                 {line.right?.newLineNumber ?? ''}
+              </span>
+              <span className="w-6 flex items-center justify-center">
+                {getCommentForLine(line.right?.newLineNumber) && (
+                  <CommentIndicator comment={getCommentForLine(line.right?.newLineNumber)!} />
+                )}
               </span>
               <pre className="flex-1 px-2 min-h-[1.5rem]">
                 {line.right && (
