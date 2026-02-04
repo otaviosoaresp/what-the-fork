@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { FileStatus, RemoteStatus } from '../../electron/git/types'
+import { useGitHubStore } from './github'
 
 interface RepositoryState {
   repoPath: string | null
@@ -52,6 +53,22 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
         remoteStatus,
         isLoading: false
       })
+
+      const githubStore = useGitHubStore.getState()
+      await githubStore.checkAvailability()
+
+      if (githubStore.isAvailable) {
+        await githubStore.loadAccounts()
+
+        const repoKey = repoName
+        const savedAccount = await window.electron.github.accounts.getForRepo(repoKey)
+
+        if (savedAccount) {
+          await githubStore.selectAccount(savedAccount)
+        } else if (githubStore.accounts.length > 0) {
+          githubStore.setNeedsAccountSelection(true)
+        }
+      }
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : 'Failed to load repository',
