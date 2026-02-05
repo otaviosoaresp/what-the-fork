@@ -8,6 +8,7 @@
     "type": "git",
     "url": "https://github.com/otaviosoaresp/what-the-fork.git"
   },
+  "engines": { "node": ">=22" },
   "main": "dist-electron/electron/main.js",
   "scripts": {
     "dev": "vite",

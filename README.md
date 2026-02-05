@@ -28,6 +28,9 @@ A desktop Git client focused on branch comparison and diff visualization. Built 
 git clone https://github.com/otaviosoaresp/what-the-fork.git
 cd what-the-fork
 
+# Set the correct node version
+nvm use
+
 # Install dependencies
 npm install
 
