@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect, useRef } from 'react'
 import { MessageSquare } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { DiffFile, DiffLine, DiffChunk } from '../../../electron/git/types'
@@ -66,8 +66,19 @@ function getHiddenLinesBefore(chunk: DiffChunk, prevChunk?: DiffChunk): number {
 export function SplitView({ file }: SplitViewProps) {
   const { comments } = useReviewStore()
   const { prComments } = useGitHubStore()
-  const { expandContext, expandedRanges } = useDiffStore()
+  const { expandContext, expandedRanges, scrollToLine, clearScrollToLine } = useDiffStore()
   const [expandingChunk, setExpandingChunk] = useState<{ chunkIndex: number; direction: 'up' | 'down' } | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (scrollToLine && containerRef.current) {
+      const lineElement = containerRef.current.querySelector(`[data-line="${scrollToLine}"]`)
+      if (lineElement) {
+        lineElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        clearScrollToLine()
+      }
+    }
+  }, [scrollToLine, clearScrollToLine])
 
   const prCommentsByLine = useMemo(() => {
     if (!file?.path) return new Map<number, typeof prComments>()
@@ -114,22 +125,28 @@ export function SplitView({ file }: SplitViewProps) {
     return file.chunks.map(chunk => buildSideBySideLinesFromChunk(chunk))
   }, [file.chunks])
 
-  const fileComments = useMemo(() => {
+  const reviewCommentsByLine = useMemo(() => {
     const normalizedPath = file.path.replace(/^\.?\//, '')
-    return comments.filter(c => {
-      const normalizedCommentPath = c.file.replace(/^\.?\//, '')
-      return (
-        normalizedCommentPath === normalizedPath ||
-        normalizedCommentPath.endsWith('/' + normalizedPath) ||
-        normalizedPath.endsWith('/' + normalizedCommentPath)
-      )
-    })
+    const map = new Map<number, typeof comments>()
+    comments
+      .filter(c => {
+        const normalizedCommentPath = c.file.replace(/^\.?\//, '')
+        return (
+          normalizedCommentPath === normalizedPath ||
+          normalizedCommentPath.endsWith('/' + normalizedPath) ||
+          normalizedPath.endsWith('/' + normalizedCommentPath)
+        )
+      })
+      .forEach(c => {
+        const existing = map.get(c.line) || []
+        map.set(c.line, [...existing, c])
+      })
+    return map
   }, [comments, file.path])
 
-  const getCommentForLine = (lineNumber: number | undefined) => {
-    if (!lineNumber) return null
-    return fileComments.find(c => c.line === lineNumber) || null
-  }
+  const reviewCommentLines = useMemo(() => {
+    return new Set(reviewCommentsByLine.keys())
+  }, [reviewCommentsByLine])
 
   const renderLeftLine = (line: SideBySideLine, index: number, pairedRight?: DiffLine | null) => (
     <div
@@ -158,26 +175,29 @@ export function SplitView({ file }: SplitViewProps) {
   const renderRightLine = (line: SideBySideLine, index: number, pairedLeft?: DiffLine | null) => {
     const lineNumber = line.right?.newLineNumber
     const hasPrComment = lineNumber !== undefined && prCommentLines.has(lineNumber)
+    const hasReviewComment = lineNumber !== undefined && reviewCommentLines.has(lineNumber)
+    const hasAnyComment = hasPrComment || hasReviewComment
 
     return (
       <div
         key={index}
+        data-line={lineNumber}
         className={cn(
           'flex relative',
           line.right?.type === 'add' && 'bg-[var(--color-diff-added-bg)] border-l-[3px] border-l-[var(--color-diff-added-border)]',
-          hasPrComment && !line.right?.type && 'bg-blue-500/10 border-l-2 border-l-blue-500',
-          hasPrComment && line.right?.type === 'add' && 'ring-1 ring-inset ring-blue-500/30'
+          hasAnyComment && !line.right?.type && 'bg-accent/10 border-l-2 border-l-accent',
+          hasAnyComment && line.right?.type === 'add' && 'ring-1 ring-inset ring-accent/30'
         )}
       >
         <span className="w-12 px-2 text-right text-muted-foreground text-xs select-none border-r border-border">
           {line.right?.newLineNumber ?? ''}
         </span>
-        <span className="w-6 flex items-center justify-center">
+        <span className="w-6 flex items-center justify-center gap-0.5">
           {hasPrComment && (
             <MessageSquare className="w-3 h-3 text-blue-500" />
           )}
-          {getCommentForLine(line.right?.newLineNumber) && (
-            <CommentIndicator comment={getCommentForLine(line.right?.newLineNumber)!} />
+          {hasReviewComment && (
+            <CommentIndicator comment={reviewCommentsByLine.get(lineNumber!)![0]} />
           )}
         </span>
         <pre className="flex-1 px-2 min-h-[1.5rem]">
@@ -221,7 +241,7 @@ export function SplitView({ file }: SplitViewProps) {
   })
 
   return (
-    <DiffContainer className="h-full overflow-auto font-mono text-sm">
+    <DiffContainer ref={containerRef} className="h-full overflow-auto font-mono text-sm">
       <div className="px-4 py-2 bg-muted/50 border-b border-border sticky top-0 z-10">
         <span className="text-xs">{file.path}</span>
       </div>
@@ -239,7 +259,9 @@ export function SplitView({ file }: SplitViewProps) {
             )
           }
           const lineNumber = item.line?.right?.newLineNumber
-          const lineComments = lineNumber ? prCommentsByLine.get(lineNumber) : undefined
+          const linePrComments = lineNumber ? prCommentsByLine.get(lineNumber) : undefined
+          const lineReviewComments = lineNumber ? reviewCommentsByLine.get(lineNumber) : undefined
+          const hasComments = (linePrComments && linePrComments.length > 0) || (lineReviewComments && lineReviewComments.length > 0)
           return (
             <div key={index}>
               <div className="flex">
@@ -250,8 +272,8 @@ export function SplitView({ file }: SplitViewProps) {
                   {renderRightLine(item.line!, index, item.line?.left)}
                 </div>
               </div>
-              {lineComments && lineComments.length > 0 && (
-                <InlineComment comments={lineComments} />
+              {hasComments && (
+                <InlineComment prComments={linePrComments} reviewComments={lineReviewComments} />
               )}
             </div>
           )

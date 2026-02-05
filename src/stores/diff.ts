@@ -20,6 +20,7 @@ interface DiffState {
   isLoading: boolean
   error: string | null
   expandedRanges: Record<string, ExpandedRange[]>
+  scrollToLine: number | null
 
   setMode: (mode: DiffMode) => void
   setBaseBranch: (branch: string | null) => void
@@ -28,12 +29,14 @@ interface DiffState {
   loadUnstagedDiff: (targetPath?: string) => Promise<void>
   loadCommitDiff: (commit: Commit) => Promise<void>
   selectFile: (file: DiffFile | null) => void
+  selectFileAndLine: (file: DiffFile, line: number) => void
   selectNextFile: () => void
   selectPreviousFile: () => void
   swapBranches: () => Promise<void>
   clearDiff: () => void
   expandContext: (filePath: string, chunkIndex: number, direction: 'up' | 'down', count: number) => Promise<void>
   clearExpandedRanges: () => void
+  clearScrollToLine: () => void
 }
 
 export const useDiffStore = create<DiffState>((set, get) => ({
@@ -46,6 +49,7 @@ export const useDiffStore = create<DiffState>((set, get) => ({
   isLoading: false,
   error: null,
   expandedRanges: {},
+  scrollToLine: null,
 
   setMode: (mode: DiffMode) => {
     set({ mode, files: [], selectedFile: null, selectedCommit: null })
@@ -122,7 +126,11 @@ export const useDiffStore = create<DiffState>((set, get) => ({
   },
 
   selectFile: (file: DiffFile | null) => {
-    set({ selectedFile: file, expandedRanges: {} })
+    set({ selectedFile: file, expandedRanges: {}, scrollToLine: null })
+  },
+
+  selectFileAndLine: (file: DiffFile, line: number) => {
+    set({ selectedFile: file, expandedRanges: {}, scrollToLine: line })
   },
 
   selectNextFile: () => {
@@ -222,5 +230,9 @@ export const useDiffStore = create<DiffState>((set, get) => ({
 
   clearExpandedRanges: () => {
     set({ expandedRanges: {} })
+  },
+
+  clearScrollToLine: () => {
+    set({ scrollToLine: null })
   }
 }))

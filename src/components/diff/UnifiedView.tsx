@@ -9,7 +9,7 @@ import { InlineComment } from './InlineComment'
 import { useReviewStore } from '@/stores/review'
 import { useGitHubStore } from '@/stores/github'
 import { useDiffStore } from '@/stores/diff'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect, useRef } from 'react'
 import { ExpandButton } from './ExpandButton'
 
 interface UnifiedViewProps {
@@ -27,8 +27,19 @@ function getHiddenLinesBefore(chunk: DiffChunk, prevChunk?: DiffChunk): number {
 export function UnifiedView({ file }: UnifiedViewProps) {
   const { comments } = useReviewStore()
   const { prComments } = useGitHubStore()
-  const { expandContext, expandedRanges } = useDiffStore()
+  const { expandContext, expandedRanges, scrollToLine, clearScrollToLine } = useDiffStore()
   const [expandingChunk, setExpandingChunk] = useState<{ chunkIndex: number; direction: 'up' | 'down' } | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (scrollToLine && containerRef.current) {
+      const lineElement = containerRef.current.querySelector(`[data-line="${scrollToLine}"]`)
+      if (lineElement) {
+        lineElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        clearScrollToLine()
+      }
+    }
+  }, [scrollToLine, clearScrollToLine])
 
   const prCommentsByLine = useMemo(() => {
     if (!file?.path) return new Map<number, typeof prComments>()
@@ -69,36 +80,45 @@ export function UnifiedView({ file }: UnifiedViewProps) {
     }))
   }, [file.chunks])
 
-  const fileComments = useMemo(() => {
+  const reviewCommentsByLine = useMemo(() => {
     const normalizedPath = file.path.replace(/^\.?\//, '')
-    return comments.filter(c => {
-      const normalizedCommentPath = c.file.replace(/^\.?\//, '')
-      return (
-        normalizedCommentPath === normalizedPath ||
-        normalizedCommentPath.endsWith('/' + normalizedPath) ||
-        normalizedPath.endsWith('/' + normalizedCommentPath)
-      )
-    })
+    const map = new Map<number, typeof comments>()
+    comments
+      .filter(c => {
+        const normalizedCommentPath = c.file.replace(/^\.?\//, '')
+        return (
+          normalizedCommentPath === normalizedPath ||
+          normalizedCommentPath.endsWith('/' + normalizedPath) ||
+          normalizedPath.endsWith('/' + normalizedCommentPath)
+        )
+      })
+      .forEach(c => {
+        const existing = map.get(c.line) || []
+        map.set(c.line, [...existing, c])
+      })
+    return map
   }, [comments, file.path])
 
-  const getCommentForLine = (lineNumber: number | undefined) => {
-    if (!lineNumber) return null
-    return fileComments.find(c => c.line === lineNumber) || null
-  }
+  const reviewCommentLines = useMemo(() => {
+    return new Set(reviewCommentsByLine.keys())
+  }, [reviewCommentsByLine])
 
   const renderLine = (line: DiffLine, pairedContent: string | undefined, lineIndex: number) => {
     const lineNumber = line.newLineNumber
     const hasPrComment = lineNumber !== undefined && prCommentLines.has(lineNumber)
+    const hasReviewComment = lineNumber !== undefined && reviewCommentLines.has(lineNumber)
+    const hasAnyComment = hasPrComment || hasReviewComment
 
     return (
       <div
         key={lineIndex}
+        data-line={lineNumber}
         className={cn(
           'flex relative',
           line.type === 'add' && 'bg-[var(--color-diff-added-bg)] border-l-[3px] border-l-[var(--color-diff-added-border)]',
           line.type === 'remove' && 'bg-[var(--color-diff-removed-bg)] border-l-[3px] border-l-[var(--color-diff-removed-border)]',
-          hasPrComment && line.type === 'context' && 'bg-blue-500/10 border-l-2 border-l-blue-500',
-          hasPrComment && line.type === 'add' && 'ring-1 ring-inset ring-blue-500/30'
+          hasAnyComment && line.type === 'context' && 'bg-accent/10 border-l-2 border-l-accent',
+          hasAnyComment && line.type === 'add' && 'ring-1 ring-inset ring-accent/30'
         )}
       >
         <span className="w-12 px-2 text-right text-muted-foreground text-xs select-none border-r border-border">
@@ -110,12 +130,12 @@ export function UnifiedView({ file }: UnifiedViewProps) {
         <span className="w-6 text-center select-none">
           {line.type === 'add' ? '+' : line.type === 'remove' ? '-' : ' '}
         </span>
-        <span className="w-6 flex items-center justify-center">
+        <span className="w-6 flex items-center justify-center gap-0.5">
           {hasPrComment && (
             <MessageSquare className="w-3 h-3 text-blue-500" />
           )}
-          {getCommentForLine(line.newLineNumber) && (
-            <CommentIndicator comment={getCommentForLine(line.newLineNumber)!} />
+          {hasReviewComment && (
+            <CommentIndicator comment={reviewCommentsByLine.get(lineNumber!)![0]} />
           )}
         </span>
         <pre className="flex-1 px-2">
@@ -140,7 +160,7 @@ export function UnifiedView({ file }: UnifiedViewProps) {
   }
 
   return (
-    <DiffContainer className="h-full overflow-auto font-mono text-sm">
+    <DiffContainer ref={containerRef} className="h-full overflow-auto font-mono text-sm">
       <div className="px-4 py-2 bg-muted/50 border-b border-border sticky top-0">
         <span className="text-xs">{file.path}</span>
       </div>
@@ -170,12 +190,14 @@ export function UnifiedView({ file }: UnifiedViewProps) {
               {expandedLinesUp.map((line, idx) => renderLine(line, undefined, `expanded-up-${idx}` as unknown as number))}
 
               {lines.map(({ line, pairedContent }, lineIndex) => {
-                const lineComments = line.newLineNumber ? prCommentsByLine.get(line.newLineNumber) : undefined
+                const linePrComments = line.newLineNumber ? prCommentsByLine.get(line.newLineNumber) : undefined
+                const lineReviewComments = line.newLineNumber ? reviewCommentsByLine.get(line.newLineNumber) : undefined
+                const hasComments = (linePrComments && linePrComments.length > 0) || (lineReviewComments && lineReviewComments.length > 0)
                 return (
                   <div key={lineIndex}>
                     {renderLine(line, pairedContent, lineIndex)}
-                    {lineComments && lineComments.length > 0 && (
-                      <InlineComment comments={lineComments} />
+                    {hasComments && (
+                      <InlineComment prComments={linePrComments} reviewComments={lineReviewComments} />
                     )}
                   </div>
                 )

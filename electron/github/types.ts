@@ -53,4 +53,7 @@ export interface PRComment {
   author: string
   createdAt: string
   inReplyToId: number | null
+  isResolved: boolean
+  isOutdated: boolean
+  threadId: string | null
 }

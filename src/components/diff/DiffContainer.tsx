@@ -1,4 +1,4 @@
-import { useRef, useState, useCallback } from 'react'
+import { useRef, useState, useCallback, forwardRef, useImperativeHandle } from 'react'
 import { SelectionPopover } from '@/components/review/SelectionPopover'
 
 interface DiffContainerProps {
@@ -11,8 +11,10 @@ interface PopoverState {
   rect: DOMRect
 }
 
-export function DiffContainer({ children, className }: DiffContainerProps) {
+export const DiffContainer = forwardRef<HTMLDivElement, DiffContainerProps>(function DiffContainer({ children, className }, ref) {
   const containerRef = useRef<HTMLDivElement>(null)
+
+  useImperativeHandle(ref, () => containerRef.current!, [])
   const [popover, setPopover] = useState<PopoverState | null>(null)
   const isInteractingWithPopover = useRef(false)
 
@@ -75,4 +77,4 @@ export function DiffContainer({ children, className }: DiffContainerProps) {
       )}
     </div>
   )
-}
+})
