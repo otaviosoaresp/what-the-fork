@@ -1,10 +1,12 @@
 import { cn } from '@/lib/utils'
+import { MessageSquare } from 'lucide-react'
 import type { DiffFile, DiffChunk, DiffLine } from '../../../electron/git/types'
 import { TokenizedLine } from './TokenizedLine'
 import { pairChunkLines } from '@/lib/diff-line-pairing'
 import { DiffContainer } from './DiffContainer'
 import { CommentIndicator } from './CommentIndicator'
 import { useReviewStore } from '@/stores/review'
+import { useGitHubStore } from '@/stores/github'
 import { useDiffStore } from '@/stores/diff'
 import { useMemo, useState } from 'react'
 import { ExpandButton } from './ExpandButton'
@@ -23,8 +25,19 @@ function getHiddenLinesBefore(chunk: DiffChunk, prevChunk?: DiffChunk): number {
 
 export function UnifiedView({ file }: UnifiedViewProps) {
   const { comments } = useReviewStore()
+  const { prComments } = useGitHubStore()
   const { expandContext, expandedRanges } = useDiffStore()
   const [expandingChunk, setExpandingChunk] = useState<{ chunkIndex: number; direction: 'up' | 'down' } | null>(null)
+
+  const prCommentLines = useMemo(() => {
+    if (!file?.path) return new Set<number>()
+    const normalizedPath = file.path.replace(/^\.?\//, '')
+    return new Set(
+      prComments
+        .filter(c => c.path?.replace(/^\.?\//, '') === normalizedPath && c.line)
+        .map(c => c.line as number)
+    )
+  }, [prComments, file?.path])
 
   const fileExpanded = expandedRanges[file.path] ?? []
 
@@ -64,39 +77,49 @@ export function UnifiedView({ file }: UnifiedViewProps) {
     return fileComments.find(c => c.line === lineNumber) || null
   }
 
-  const renderLine = (line: DiffLine, pairedContent: string | undefined, lineIndex: number) => (
-    <div
-      key={lineIndex}
-      className={cn(
-        'flex',
-        line.type === 'add' && 'bg-[var(--color-diff-added-bg)] border-l-[3px] border-l-[var(--color-diff-added-border)]',
-        line.type === 'remove' && 'bg-[var(--color-diff-removed-bg)] border-l-[3px] border-l-[var(--color-diff-removed-border)]'
-      )}
-    >
-      <span className="w-12 px-2 text-right text-muted-foreground text-xs select-none border-r border-border">
-        {line.oldLineNumber ?? ''}
-      </span>
-      <span className="w-12 px-2 text-right text-muted-foreground text-xs select-none border-r border-border">
-        {line.newLineNumber ?? ''}
-      </span>
-      <span className="w-6 text-center select-none">
-        {line.type === 'add' ? '+' : line.type === 'remove' ? '-' : ' '}
-      </span>
-      <span className="w-6 flex items-center justify-center">
-        {getCommentForLine(line.newLineNumber) && (
-          <CommentIndicator comment={getCommentForLine(line.newLineNumber)!} />
+  const renderLine = (line: DiffLine, pairedContent: string | undefined, lineIndex: number) => {
+    const lineNumber = line.newLineNumber
+    const hasPrComment = lineNumber !== undefined && prCommentLines.has(lineNumber)
+
+    return (
+      <div
+        key={lineIndex}
+        className={cn(
+          'flex relative',
+          line.type === 'add' && 'bg-[var(--color-diff-added-bg)] border-l-[3px] border-l-[var(--color-diff-added-border)]',
+          line.type === 'remove' && 'bg-[var(--color-diff-removed-bg)] border-l-[3px] border-l-[var(--color-diff-removed-border)]',
+          hasPrComment && line.type === 'context' && 'bg-blue-500/10 border-l-2 border-l-blue-500',
+          hasPrComment && line.type === 'add' && 'ring-1 ring-inset ring-blue-500/30'
         )}
-      </span>
-      <pre className="flex-1 px-2">
-        <TokenizedLine
-          content={line.content}
-          filePath={file.path}
-          lineType={line.type}
-          pairedContent={pairedContent}
-        />
-      </pre>
-    </div>
-  )
+      >
+        <span className="w-12 px-2 text-right text-muted-foreground text-xs select-none border-r border-border">
+          {line.oldLineNumber ?? ''}
+        </span>
+        <span className="w-12 px-2 text-right text-muted-foreground text-xs select-none border-r border-border">
+          {line.newLineNumber ?? ''}
+        </span>
+        <span className="w-6 text-center select-none">
+          {line.type === 'add' ? '+' : line.type === 'remove' ? '-' : ' '}
+        </span>
+        <span className="w-6 flex items-center justify-center">
+          {hasPrComment && (
+            <MessageSquare className="w-3 h-3 text-blue-500" />
+          )}
+          {getCommentForLine(line.newLineNumber) && (
+            <CommentIndicator comment={getCommentForLine(line.newLineNumber)!} />
+          )}
+        </span>
+        <pre className="flex-1 px-2">
+          <TokenizedLine
+            content={line.content}
+            filePath={file.path}
+            lineType={line.type}
+            pairedContent={pairedContent}
+          />
+        </pre>
+      </div>
+    )
+  }
 
   const calculateHiddenLinesUp = (chunkIndex: number): number => {
     const chunk = file.chunks[chunkIndex]

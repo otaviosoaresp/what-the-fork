@@ -1,10 +1,12 @@
 import { useMemo, useState } from 'react'
+import { MessageSquare } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { DiffFile, DiffLine, DiffChunk } from '../../../electron/git/types'
 import { TokenizedLine } from './TokenizedLine'
 import { DiffContainer } from './DiffContainer'
 import { CommentIndicator } from './CommentIndicator'
 import { useReviewStore } from '@/stores/review'
+import { useGitHubStore } from '@/stores/github'
 import { useDiffStore } from '@/stores/diff'
 import { ExpandButton } from './ExpandButton'
 
@@ -62,8 +64,19 @@ function getHiddenLinesBefore(chunk: DiffChunk, prevChunk?: DiffChunk): number {
 
 export function SplitView({ file }: SplitViewProps) {
   const { comments } = useReviewStore()
+  const { prComments } = useGitHubStore()
   const { expandContext, expandedRanges } = useDiffStore()
   const [expandingChunk, setExpandingChunk] = useState<{ chunkIndex: number; direction: 'up' | 'down' } | null>(null)
+
+  const prCommentLines = useMemo(() => {
+    if (!file?.path) return new Set<number>()
+    const normalizedPath = file.path.replace(/^\.?\//, '')
+    return new Set(
+      prComments
+        .filter(c => c.path?.replace(/^\.?\//, '') === normalizedPath && c.line)
+        .map(c => c.line as number)
+    )
+  }, [prComments, file?.path])
 
   const fileExpanded = expandedRanges[file.path] ?? []
 
@@ -133,34 +146,44 @@ export function SplitView({ file }: SplitViewProps) {
     </div>
   )
 
-  const renderRightLine = (line: SideBySideLine, index: number, pairedLeft?: DiffLine | null) => (
-    <div
-      key={index}
-      className={cn(
-        'flex',
-        line.right?.type === 'add' && 'bg-[var(--color-diff-added-bg)] border-l-[3px] border-l-[var(--color-diff-added-border)]'
-      )}
-    >
-      <span className="w-12 px-2 text-right text-muted-foreground text-xs select-none border-r border-border">
-        {line.right?.newLineNumber ?? ''}
-      </span>
-      <span className="w-6 flex items-center justify-center">
-        {getCommentForLine(line.right?.newLineNumber) && (
-          <CommentIndicator comment={getCommentForLine(line.right?.newLineNumber)!} />
+  const renderRightLine = (line: SideBySideLine, index: number, pairedLeft?: DiffLine | null) => {
+    const lineNumber = line.right?.newLineNumber
+    const hasPrComment = lineNumber !== undefined && prCommentLines.has(lineNumber)
+
+    return (
+      <div
+        key={index}
+        className={cn(
+          'flex relative',
+          line.right?.type === 'add' && 'bg-[var(--color-diff-added-bg)] border-l-[3px] border-l-[var(--color-diff-added-border)]',
+          hasPrComment && !line.right?.type && 'bg-blue-500/10 border-l-2 border-l-blue-500',
+          hasPrComment && line.right?.type === 'add' && 'ring-1 ring-inset ring-blue-500/30'
         )}
-      </span>
-      <pre className="flex-1 px-2 min-h-[1.5rem]">
-        {line.right && (
-          <TokenizedLine
-            content={line.right.content}
-            filePath={file.path}
-            lineType={line.right.type}
-            pairedContent={pairedLeft?.type === 'remove' ? pairedLeft.content : undefined}
-          />
-        )}
-      </pre>
-    </div>
-  )
+      >
+        <span className="w-12 px-2 text-right text-muted-foreground text-xs select-none border-r border-border">
+          {line.right?.newLineNumber ?? ''}
+        </span>
+        <span className="w-6 flex items-center justify-center">
+          {hasPrComment && (
+            <MessageSquare className="w-3 h-3 text-blue-500" />
+          )}
+          {getCommentForLine(line.right?.newLineNumber) && (
+            <CommentIndicator comment={getCommentForLine(line.right?.newLineNumber)!} />
+          )}
+        </span>
+        <pre className="flex-1 px-2 min-h-[1.5rem]">
+          {line.right && (
+            <TokenizedLine
+              content={line.right.content}
+              filePath={file.path}
+              lineType={line.right.type}
+              pairedContent={pairedLeft?.type === 'remove' ? pairedLeft.content : undefined}
+            />
+          )}
+        </pre>
+      </div>
+    )
+  }
 
   const allLines: { type: 'line' | 'expand'; line?: SideBySideLine; chunkIndex?: number; direction?: 'up' | 'down'; hiddenLines?: number; isLoading?: boolean }[] = []
 
