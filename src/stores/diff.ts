@@ -1,8 +1,14 @@
 import { create } from 'zustand'
-import type { DiffFile, Commit } from '../../electron/git/types'
+import type { DiffFile, DiffLine, Commit } from '../../electron/git/types'
 import { useRepositoryStore } from './repository'
 
 type DiffMode = 'branches' | 'staged' | 'unstaged' | 'commit'
+
+interface ExpandedRange {
+  chunkIndex: number
+  direction: 'up' | 'down'
+  lines: DiffLine[]
+}
 
 interface DiffState {
   mode: DiffMode
@@ -13,6 +19,7 @@ interface DiffState {
   selectedFile: DiffFile | null
   isLoading: boolean
   error: string | null
+  expandedRanges: Record<string, ExpandedRange[]>
 
   setMode: (mode: DiffMode) => void
   setBaseBranch: (branch: string | null) => void
@@ -25,6 +32,8 @@ interface DiffState {
   selectPreviousFile: () => void
   swapBranches: () => Promise<void>
   clearDiff: () => void
+  expandContext: (filePath: string, chunkIndex: number, direction: 'up' | 'down', count: number) => Promise<void>
+  clearExpandedRanges: () => void
 }
 
 export const useDiffStore = create<DiffState>((set, get) => ({
@@ -36,6 +45,7 @@ export const useDiffStore = create<DiffState>((set, get) => ({
   selectedFile: null,
   isLoading: false,
   error: null,
+  expandedRanges: {},
 
   setMode: (mode: DiffMode) => {
     set({ mode, files: [], selectedFile: null, selectedCommit: null })
@@ -112,7 +122,7 @@ export const useDiffStore = create<DiffState>((set, get) => ({
   },
 
   selectFile: (file: DiffFile | null) => {
-    set({ selectedFile: file })
+    set({ selectedFile: file, expandedRanges: {} })
   },
 
   selectNextFile: () => {
@@ -145,7 +155,72 @@ export const useDiffStore = create<DiffState>((set, get) => ({
       selectedFile: null,
       baseBranch: null,
       compareBranch: null,
-      selectedCommit: null
+      selectedCommit: null,
+      expandedRanges: {}
     })
+  },
+
+  expandContext: async (filePath: string, chunkIndex: number, direction: 'up' | 'down', count: number) => {
+    const repoPath = useRepositoryStore.getState().repoPath
+    if (!repoPath) return
+
+    const { mode, compareBranch, selectedCommit, files, expandedRanges } = get()
+
+    const file = files.find(f => f.path === filePath)
+    if (!file || chunkIndex < 0 || chunkIndex >= file.chunks.length) return
+
+    let ref: string
+    if (mode === 'branches' && compareBranch) {
+      ref = compareBranch
+    } else if (mode === 'commit' && selectedCommit) {
+      ref = selectedCommit.hash
+    } else {
+      ref = 'HEAD'
+    }
+
+    try {
+      const fileContent = await window.electron.git.file.content(repoPath, ref, filePath)
+      const chunk = file.chunks[chunkIndex]
+
+      let startLine: number
+      let endLine: number
+
+      if (direction === 'up') {
+        startLine = chunk.newStart - count - 1
+        endLine = chunk.newStart - 1
+      } else {
+        startLine = chunk.newStart + chunk.newLines
+        endLine = chunk.newStart + chunk.newLines + count
+      }
+
+      startLine = Math.max(0, startLine)
+      endLine = Math.min(fileContent.length, endLine)
+
+      const lines: DiffLine[] = []
+      for (let i = startLine; i < endLine; i++) {
+        lines.push({
+          type: 'context',
+          content: fileContent[i] ?? '',
+          oldLineNumber: i + 1,
+          newLineNumber: i + 1
+        })
+      }
+
+      const newRange: ExpandedRange = { chunkIndex, direction, lines }
+      const existingRanges = expandedRanges[filePath] ?? []
+
+      set({
+        expandedRanges: {
+          ...expandedRanges,
+          [filePath]: [...existingRanges, newRange]
+        }
+      })
+    } catch {
+      return
+    }
+  },
+
+  clearExpandedRanges: () => {
+    set({ expandedRanges: {} })
   }
 }))
