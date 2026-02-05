@@ -94,6 +94,21 @@ interface TaskContext {
   text?: string
 }
 
+async function branchExists(repoPath: string, branch: string): Promise<boolean> {
+  const result = await executeGit(repoPath, ['rev-parse', '--verify', branch])
+  return result.exitCode === 0
+}
+
+async function resolveBranch(repoPath: string, branch: string): Promise<string> {
+  if (await branchExists(repoPath, branch)) {
+    return branch
+  }
+  if (await branchExists(repoPath, `origin/${branch}`)) {
+    return `origin/${branch}`
+  }
+  return branch
+}
+
 export async function reviewBranch(
   repoPath: string,
   baseBranch: string,
@@ -104,10 +119,14 @@ export async function reviewBranch(
   const config = getReviewConfig()
   const repoConfig = getRepoReviewConfig(repoPath)
 
+  // Resolve branches (handle remote-only branches)
+  const resolvedBase = await resolveBranch(repoPath, baseBranch)
+  const resolvedCompare = await resolveBranch(repoPath, compareBranch)
+
   // Get diff first (needed for both cache check and API call)
-  const diffResult = await executeGit(repoPath, ['diff', `${baseBranch}...${compareBranch}`])
+  const diffResult = await executeGit(repoPath, ['diff', `${resolvedBase}...${resolvedCompare}`])
   if (diffResult.exitCode !== 0) {
-    throw new Error(`Failed to get diff between "${baseBranch}" and "${compareBranch}": ${diffResult.stderr}`)
+    throw new Error(`Failed to get diff between "${resolvedBase}" and "${resolvedCompare}": ${diffResult.stderr}`)
   }
 
   let diff = diffResult.stdout.trim()

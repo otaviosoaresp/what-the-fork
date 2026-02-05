@@ -1,5 +1,12 @@
-import { app, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, nativeImage } from 'electron'
 import path from 'path'
+
+function getIconPath(): string {
+  if (process.env.NODE_ENV === 'development') {
+    return path.join(__dirname, '../../build/icon.png')
+  }
+  return path.join(__dirname, '../../build/icon.png')
+}
 import { registerGitHandlers } from './git/ipc-handlers'
 import { registerAIHandlers } from './ai/ipc-handlers'
 import { registerReviewHandlers } from './ai/review-ipc'

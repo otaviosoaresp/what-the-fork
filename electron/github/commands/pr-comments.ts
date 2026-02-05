@@ -151,8 +151,7 @@ export async function getPRComments(options: {
           }
 
           resolve(comments)
-        } catch (err) {
-          console.error('Failed to parse GraphQL response:', err)
+        } catch {
           resolve([])
         }
       } else {
