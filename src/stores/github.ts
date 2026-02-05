@@ -5,6 +5,18 @@ interface GitHubAccount {
   isActive: boolean
 }
 
+interface PRComment {
+  id: number
+  path: string
+  line: number | null
+  originalLine: number | null
+  side: 'LEFT' | 'RIGHT'
+  body: string
+  author: string
+  createdAt: string
+  inReplyToId: number | null
+}
+
 interface PullRequest {
   number: number
   title: string
@@ -40,14 +52,19 @@ interface GitHubStore {
 
   branchPrMap: Record<string, PullRequest>
 
+  prComments: PRComment[]
+  prCommentsLoading: boolean
+
   checkAvailability: () => Promise<void>
   loadAccounts: () => Promise<void>
   selectAccount: (username: string) => Promise<void>
   setNeedsAccountSelection: (needs: boolean) => void
   setPrFilter: (filter: 'created' | 'review-requested' | 'all') => void
-  loadPullRequests: (repo: string) => Promise<void>
-  refreshPullRequests: (repo: string) => Promise<void>
-  loadBranchPrMap: (repo: string, branches: string[]) => Promise<void>
+  loadPullRequests: (repoPath: string) => Promise<void>
+  refreshPullRequests: (repoPath: string) => Promise<void>
+  loadBranchPrMap: (repoPath: string, branches: string[]) => Promise<void>
+  loadPRComments: (repoPath: string, prNumber: number) => Promise<void>
+  clearPRComments: () => void
   clearState: () => void
 }
 
@@ -62,6 +79,9 @@ export const useGitHubStore = create<GitHubStore>((set, get) => ({
   prLoading: false,
 
   branchPrMap: {},
+
+  prComments: [],
+  prCommentsLoading: false,
 
   checkAvailability: async () => {
     const available = await window.electron.github.isAvailable()
@@ -86,15 +106,16 @@ export const useGitHubStore = create<GitHubStore>((set, get) => ({
     set({ prFilter: filter })
   },
 
-  loadPullRequests: async (repo: string) => {
-    const { selectedAccount, prFilter } = get()
+  loadPullRequests: async (repoPath: string) => {
+    const { selectedAccount, pullRequests } = get()
     if (!selectedAccount) return
+    if (pullRequests.length > 0) return
 
     set({ prLoading: true })
     try {
       const prs = await window.electron.github.pr.list({
-        repo,
-        type: prFilter
+        repoPath,
+        type: 'all'
       })
       set({ pullRequests: prs })
     } finally {
@@ -102,11 +123,23 @@ export const useGitHubStore = create<GitHubStore>((set, get) => ({
     }
   },
 
-  refreshPullRequests: async (repo: string) => {
-    await get().loadPullRequests(repo)
+  refreshPullRequests: async (repoPath: string) => {
+    const { selectedAccount } = get()
+    if (!selectedAccount) return
+
+    set({ prLoading: true })
+    try {
+      const prs = await window.electron.github.pr.list({
+        repoPath,
+        type: 'all'
+      })
+      set({ pullRequests: prs })
+    } finally {
+      set({ prLoading: false })
+    }
   },
 
-  loadBranchPrMap: async (repo: string, branches: string[]) => {
+  loadBranchPrMap: async (repoPath: string, branches: string[]) => {
     const { selectedAccount } = get()
     if (!selectedAccount) return
 
@@ -115,7 +148,7 @@ export const useGitHubStore = create<GitHubStore>((set, get) => ({
     await Promise.all(
       branches.slice(0, 50).map(async (branch) => {
         const pr = await window.electron.github.pr.forBranch({
-          repo,
+          repoPath,
           branch
         })
         if (pr) {
@@ -127,10 +160,28 @@ export const useGitHubStore = create<GitHubStore>((set, get) => ({
     set({ branchPrMap: map })
   },
 
+  loadPRComments: async (repoPath: string, prNumber: number) => {
+    set({ prCommentsLoading: true })
+    try {
+      const comments = await window.electron.github.pr.comments({
+        repoPath,
+        prNumber
+      })
+      set({ prComments: comments })
+    } finally {
+      set({ prCommentsLoading: false })
+    }
+  },
+
+  clearPRComments: () => {
+    set({ prComments: [] })
+  },
+
   clearState: () => {
     set({
       pullRequests: [],
       branchPrMap: {},
+      prComments: [],
       selectedAccount: null,
       needsAccountSelection: false
     })
