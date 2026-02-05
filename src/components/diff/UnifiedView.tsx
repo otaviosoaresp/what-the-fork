@@ -5,6 +5,7 @@ import { TokenizedLine } from './TokenizedLine'
 import { pairChunkLines } from '@/lib/diff-line-pairing'
 import { DiffContainer } from './DiffContainer'
 import { CommentIndicator } from './CommentIndicator'
+import { InlineComment } from './InlineComment'
 import { useReviewStore } from '@/stores/review'
 import { useGitHubStore } from '@/stores/github'
 import { useDiffStore } from '@/stores/diff'
@@ -29,15 +30,23 @@ export function UnifiedView({ file }: UnifiedViewProps) {
   const { expandContext, expandedRanges } = useDiffStore()
   const [expandingChunk, setExpandingChunk] = useState<{ chunkIndex: number; direction: 'up' | 'down' } | null>(null)
 
-  const prCommentLines = useMemo(() => {
-    if (!file?.path) return new Set<number>()
+  const prCommentsByLine = useMemo(() => {
+    if (!file?.path) return new Map<number, typeof prComments>()
     const normalizedPath = file.path.replace(/^\.?\//, '')
-    return new Set(
-      prComments
-        .filter(c => c.path?.replace(/^\.?\//, '') === normalizedPath && c.line)
-        .map(c => c.line as number)
-    )
+    const map = new Map<number, typeof prComments>()
+    prComments
+      .filter(c => c.path?.replace(/^\.?\//, '') === normalizedPath && c.line)
+      .forEach(c => {
+        const line = c.line as number
+        const existing = map.get(line) || []
+        map.set(line, [...existing, c])
+      })
+    return map
   }, [prComments, file?.path])
+
+  const prCommentLines = useMemo(() => {
+    return new Set(prCommentsByLine.keys())
+  }, [prCommentsByLine])
 
   const fileExpanded = expandedRanges[file.path] ?? []
 
@@ -160,7 +169,17 @@ export function UnifiedView({ file }: UnifiedViewProps) {
 
               {expandedLinesUp.map((line, idx) => renderLine(line, undefined, `expanded-up-${idx}` as unknown as number))}
 
-              {lines.map(({ line, pairedContent }, lineIndex) => renderLine(line, pairedContent, lineIndex))}
+              {lines.map(({ line, pairedContent }, lineIndex) => {
+                const lineComments = line.newLineNumber ? prCommentsByLine.get(line.newLineNumber) : undefined
+                return (
+                  <div key={lineIndex}>
+                    {renderLine(line, pairedContent, lineIndex)}
+                    {lineComments && lineComments.length > 0 && (
+                      <InlineComment comments={lineComments} />
+                    )}
+                  </div>
+                )
+              })}
 
               {expandedLinesDown.map((line, idx) => renderLine(line, undefined, `expanded-down-${idx}` as unknown as number))}
 

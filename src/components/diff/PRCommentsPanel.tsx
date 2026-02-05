@@ -12,6 +12,7 @@ export function PRCommentsPanel({ onCommentClick }: PRCommentsPanelProps) {
   const { prComments, prCommentsLoading } = useGitHubStore()
   const { selectedFile } = useDiffStore()
   const [isCollapsed, setIsCollapsed] = useState(false)
+  const [expandedComments, setExpandedComments] = useState<Set<number>>(new Set())
 
   const commentsByFile = useMemo(() => {
     return prComments.reduce((acc, comment) => {
@@ -87,27 +88,61 @@ export function PRCommentsPanel({ onCommentClick }: PRCommentsPanelProps) {
                 >
                   {path}
                 </div>
-                {comments.map(comment => (
-                  <button
-                    key={comment.id}
-                    onClick={() => comment.line && onCommentClick(comment.path, comment.line)}
-                    disabled={!comment.line}
-                    className={cn(
-                      'w-full px-3 py-2 text-left transition-colors',
-                      comment.line
-                        ? 'hover:bg-muted cursor-pointer'
-                        : 'opacity-60 cursor-not-allowed'
-                    )}
-                  >
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span className="font-medium">{comment.author}</span>
-                      <span>line {comment.line ?? '?'}</span>
+                {comments.map(comment => {
+                  const isExpanded = expandedComments.has(comment.id)
+                  const toggleExpand = (e: React.MouseEvent) => {
+                    e.stopPropagation()
+                    setExpandedComments(prev => {
+                      const next = new Set(prev)
+                      if (next.has(comment.id)) {
+                        next.delete(comment.id)
+                      } else {
+                        next.add(comment.id)
+                      }
+                      return next
+                    })
+                  }
+                  return (
+                    <div
+                      key={comment.id}
+                      className={cn(
+                        'px-3 py-2 transition-colors border-b border-border/50 last:border-b-0',
+                        comment.line ? 'hover:bg-muted' : 'opacity-60'
+                      )}
+                    >
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{comment.author}</span>
+                          <span>line {comment.line ?? '?'}</span>
+                        </div>
+                        {comment.line && (
+                          <button
+                            onClick={() => onCommentClick(comment.path, comment.line!)}
+                            className="text-accent hover:underline"
+                          >
+                            Go to line
+                          </button>
+                        )}
+                      </div>
+                      <div
+                        className={cn(
+                          'text-sm text-foreground mt-1 whitespace-pre-wrap',
+                          !isExpanded && 'line-clamp-3'
+                        )}
+                      >
+                        {comment.body}
+                      </div>
+                      {comment.body.length > 150 && (
+                        <button
+                          onClick={toggleExpand}
+                          className="text-xs text-accent hover:underline mt-1"
+                        >
+                          {isExpanded ? 'Show less' : 'Show more'}
+                        </button>
+                      )}
                     </div>
-                    <div className="text-sm text-foreground line-clamp-2 mt-1">
-                      {comment.body}
-                    </div>
-                  </button>
-                ))}
+                  )
+                })}
               </div>
             )
           })}

@@ -5,6 +5,7 @@ import type { DiffFile, DiffLine, DiffChunk } from '../../../electron/git/types'
 import { TokenizedLine } from './TokenizedLine'
 import { DiffContainer } from './DiffContainer'
 import { CommentIndicator } from './CommentIndicator'
+import { InlineComment } from './InlineComment'
 import { useReviewStore } from '@/stores/review'
 import { useGitHubStore } from '@/stores/github'
 import { useDiffStore } from '@/stores/diff'
@@ -68,15 +69,23 @@ export function SplitView({ file }: SplitViewProps) {
   const { expandContext, expandedRanges } = useDiffStore()
   const [expandingChunk, setExpandingChunk] = useState<{ chunkIndex: number; direction: 'up' | 'down' } | null>(null)
 
-  const prCommentLines = useMemo(() => {
-    if (!file?.path) return new Set<number>()
+  const prCommentsByLine = useMemo(() => {
+    if (!file?.path) return new Map<number, typeof prComments>()
     const normalizedPath = file.path.replace(/^\.?\//, '')
-    return new Set(
-      prComments
-        .filter(c => c.path?.replace(/^\.?\//, '') === normalizedPath && c.line)
-        .map(c => c.line as number)
-    )
+    const map = new Map<number, typeof prComments>()
+    prComments
+      .filter(c => c.path?.replace(/^\.?\//, '') === normalizedPath && c.line)
+      .forEach(c => {
+        const line = c.line as number
+        const existing = map.get(line) || []
+        map.set(line, [...existing, c])
+      })
+    return map
   }, [prComments, file?.path])
+
+  const prCommentLines = useMemo(() => {
+    return new Set(prCommentsByLine.keys())
+  }, [prCommentsByLine])
 
   const fileExpanded = expandedRanges[file.path] ?? []
 
@@ -216,39 +225,37 @@ export function SplitView({ file }: SplitViewProps) {
       <div className="px-4 py-2 bg-muted/50 border-b border-border sticky top-0 z-10">
         <span className="text-xs">{file.path}</span>
       </div>
-      <div className="flex">
-        <div className="flex-1 border-r border-border">
-          {allLines.map((item, index) => {
-            if (item.type === 'expand') {
-              return (
-                <ExpandButton
-                  key={`expand-${index}`}
-                  direction={item.direction!}
-                  hiddenLines={item.hiddenLines!}
-                  onExpand={(count) => handleExpand(item.chunkIndex!, item.direction!, count)}
-                  loading={item.isLoading}
-                />
-              )
-            }
-            return renderLeftLine(item.line!, index, item.line?.right)
-          })}
-        </div>
-        <div className="flex-1">
-          {allLines.map((item, index) => {
-            if (item.type === 'expand') {
-              return (
-                <ExpandButton
-                  key={`expand-${index}`}
-                  direction={item.direction!}
-                  hiddenLines={item.hiddenLines!}
-                  onExpand={(count) => handleExpand(item.chunkIndex!, item.direction!, count)}
-                  loading={item.isLoading}
-                />
-              )
-            }
-            return renderRightLine(item.line!, index, item.line?.left)
-          })}
-        </div>
+      <div>
+        {allLines.map((item, index) => {
+          if (item.type === 'expand') {
+            return (
+              <ExpandButton
+                key={`expand-${index}`}
+                direction={item.direction!}
+                hiddenLines={item.hiddenLines!}
+                onExpand={(count) => handleExpand(item.chunkIndex!, item.direction!, count)}
+                loading={item.isLoading}
+              />
+            )
+          }
+          const lineNumber = item.line?.right?.newLineNumber
+          const lineComments = lineNumber ? prCommentsByLine.get(lineNumber) : undefined
+          return (
+            <div key={index}>
+              <div className="flex">
+                <div className="flex-1 border-r border-border">
+                  {renderLeftLine(item.line!, index, item.line?.right)}
+                </div>
+                <div className="flex-1">
+                  {renderRightLine(item.line!, index, item.line?.left)}
+                </div>
+              </div>
+              {lineComments && lineComments.length > 0 && (
+                <InlineComment comments={lineComments} />
+              )}
+            </div>
+          )
+        })}
       </div>
     </DiffContainer>
   )
