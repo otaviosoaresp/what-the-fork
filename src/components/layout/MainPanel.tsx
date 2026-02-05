@@ -1,14 +1,44 @@
+import { useEffect } from 'react'
 import { useDiffStore } from '@/stores/diff'
 import { useUIStore } from '@/stores/ui'
+import { useGitHubStore } from '@/stores/github'
+import { useRepositoryStore } from '@/stores/repository'
 import { DiffView } from '@/components/diff/DiffView'
 import { DiffHeader } from '@/components/diff/DiffHeader'
 import { FileList } from '@/components/diff/FileList'
 import { ComparisonHeader } from '@/components/branches/ComparisonHeader'
 import { ReviewPanel } from '@/components/review/ReviewPanel'
+import { PRCommentsPanel } from '@/components/diff/PRCommentsPanel'
 
 export function MainPanel() {
-  const { files, selectedFile, isLoading, error, baseBranch, compareBranch, mode } = useDiffStore()
+  const { files, selectedFile, isLoading, error, baseBranch, compareBranch, mode, selectFile } = useDiffStore()
   const { diffViewMode } = useUIStore()
+  const { branchPrMap, loadPRComments, clearPRComments } = useGitHubStore()
+  const { repoPath } = useRepositoryStore()
+
+  useEffect(() => {
+    if (mode === 'branches' && compareBranch) {
+      const pr = branchPrMap[compareBranch]
+      if (pr && repoPath) {
+        loadPRComments(repoPath, pr.number)
+      } else {
+        clearPRComments()
+      }
+    } else {
+      clearPRComments()
+    }
+  }, [mode, compareBranch, branchPrMap, repoPath, loadPRComments, clearPRComments])
+
+  const handleCommentClick = (path: string, _line: number) => {
+    const file = files.find(f => {
+      const normalizedFilePath = f.path.replace(/^\.?\//, '')
+      const normalizedCommentPath = path.replace(/^\.?\//, '')
+      return normalizedFilePath === normalizedCommentPath
+    })
+    if (file) {
+      selectFile(file)
+    }
+  }
 
   if (isLoading) {
     return (
@@ -66,6 +96,7 @@ export function MainPanel() {
         </div>
         <FileList files={files} selectedFile={selectedFile} />
       </div>
+      <PRCommentsPanel onCommentClick={handleCommentClick} />
       <ReviewPanel />
     </main>
   )
