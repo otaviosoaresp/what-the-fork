@@ -94,4 +94,8 @@ export function registerGitHandlers(): void {
   ipcMain.handle('git:remoteStatus', async (_event, repoPath: string) => {
     return commands.getRemoteStatus(repoPath)
   })
+
+  ipcMain.handle('git:file:content', async (_event, repoPath: string, ref: string, filePath: string) => {
+    return commands.getFileContent({ repoPath, ref, filePath })
+  })
 }

@@ -5,6 +5,7 @@ import { MainPanel } from './components/layout/MainPanel'
 import { Header } from './components/layout/Header'
 import { WelcomeScreen } from './components/WelcomeScreen'
 import { ToastContainer } from './components/ui/Toast'
+import { AccountSelectionModal } from './components/github/AccountSelectionModal'
 
 export default function App() {
   const { repoPath, loadRepository } = useRepositoryStore()
@@ -60,6 +61,7 @@ export default function App() {
         </div>
       </div>
       <ToastContainer />
+      <AccountSelectionModal />
     </>
   )
 }

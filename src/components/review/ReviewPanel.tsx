@@ -5,6 +5,7 @@ import { useRepositoryStore } from '@/stores/repository'
 import { X, Loader2, FileCode, Trash2, AlertTriangle, RefreshCw } from 'lucide-react'
 import { parseCodeReferences, parseStructuredReview } from '@/lib/review-parser'
 import { MarkdownContent } from '@/components/shared/MarkdownContent'
+import { ReviewContextField } from './ReviewContextField'
 import { cn } from '@/lib/utils'
 import type { ReviewHistoryEntry } from '@/types/electron'
 
@@ -41,7 +42,9 @@ export function ReviewPanel() {
     setHistory,
     selectHistoryEntry,
     selectedHistoryEntry,
-    historyDiffChanged
+    historyDiffChanged,
+    reviewContext,
+    setReviewContext
   } = useReviewStore()
   const { files, selectFile, baseBranch, compareBranch, mode } = useDiffStore()
   const { repoPath } = useRepositoryStore()
@@ -121,7 +124,7 @@ export function ReviewPanel() {
     setLoading(true)
 
     try {
-      const result = await window.electron.review.reviewBranch(repoPath, baseBranch, compareBranch, skipCache)
+      const result = await window.electron.review.reviewBranch(repoPath, baseBranch, compareBranch, skipCache, reviewContext)
       if (result.structured) {
         setStructuredContent(
           result.structured.summary,
@@ -139,7 +142,7 @@ export function ReviewPanel() {
     } finally {
       setIsRequestingReview(false)
     }
-  }, [repoPath, baseBranch, compareBranch, isRequestingReview, setActiveTab, setLoading, setStructuredContent, setError, loadHistory])
+  }, [repoPath, baseBranch, compareBranch, isRequestingReview, reviewContext, setActiveTab, setLoading, setStructuredContent, setError, loadHistory])
 
   if (!isOpen) {
     return null
@@ -189,6 +192,47 @@ export function ReviewPanel() {
                 <AlertTriangle size={14} />
                 <span>O codigo mudou desde este review</span>
               </div>
+            </div>
+          )}
+
+          <ReviewContextField onContextChange={setReviewContext} />
+
+          {canReview && !isLoading && !content && (
+            <div className="px-4 py-3 border-b border-border">
+              <button
+                onClick={() => handleNewReview(false)}
+                disabled={isRequestingReview}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent/90 transition-colors disabled:opacity-50"
+              >
+                {isRequestingReview ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <RefreshCw size={16} />
+                )}
+                <span className="text-sm font-medium">
+                  {isRequestingReview ? 'Analisando...' : 'Iniciar Review'}
+                </span>
+              </button>
+              <p className="text-xs text-muted-foreground text-center mt-2">
+                {compareBranch} → {baseBranch}
+              </p>
+            </div>
+          )}
+
+          {canReview && content && !isLoading && (
+            <div className="px-4 py-2 border-b border-border flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">
+                {compareBranch} → {baseBranch}
+              </p>
+              <button
+                onClick={() => handleNewReview(true)}
+                disabled={isRequestingReview}
+                className="flex items-center gap-1.5 px-2 py-1 text-xs bg-muted hover:bg-muted/80 rounded transition-colors disabled:opacity-50"
+                title="Novo review (ignorar cache)"
+              >
+                <RefreshCw size={12} />
+                Refazer
+              </button>
             </div>
           )}
 
@@ -252,9 +296,9 @@ export function ReviewPanel() {
               </>
             )}
 
-            {!isLoading && !error && !content && (
+            {!isLoading && !error && !content && !canReview && (
               <p className="text-sm text-muted-foreground text-center mt-8">
-                Clique em 'Review' para analisar a branch
+                Selecione branches para comparar
               </p>
             )}
           </div>

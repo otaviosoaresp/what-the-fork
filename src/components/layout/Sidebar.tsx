@@ -2,11 +2,12 @@ import { useUIStore } from '@/stores/ui'
 import { BranchList } from '@/components/branches/BranchList'
 import { StagingArea } from '@/components/staging/StagingArea'
 import { CommitList } from '@/components/commits/CommitList'
+import { PullRequestsTab } from '@/components/pull-requests/PullRequestsTab'
 import { cn } from '@/lib/utils'
 
 interface SectionProps {
   title: string
-  section: 'branches' | 'staging' | 'commits'
+  section: 'branches' | 'staging' | 'commits' | 'pull-requests'
   children: React.ReactNode
 }
 
@@ -47,6 +48,9 @@ export function Sidebar() {
       <div className="flex-1 overflow-y-auto">
         <Section title="Branches" section="branches">
           <BranchList />
+        </Section>
+        <Section title="Pull Requests" section="pull-requests">
+          <PullRequestsTab />
         </Section>
         <Section title="Staging" section="staging">
           <StagingArea />

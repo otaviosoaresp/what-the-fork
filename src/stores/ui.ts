@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
 type DiffViewMode = 'split' | 'unified'
-type SidebarSection = 'branches' | 'staging' | 'commits'
+type SidebarSection = 'branches' | 'staging' | 'commits' | 'pull-requests'
 
 interface UIState {
   diffViewMode: DiffViewMode
@@ -26,8 +26,8 @@ export const useUIStore = create<UIState>()(
   persist(
     (set, get) => ({
       diffViewMode: 'split',
-      sidebarWidth: 280,
-      expandedSections: ['branches', 'staging', 'commits'],
+      sidebarWidth: 320,
+      expandedSections: ['branches', 'pull-requests', 'staging', 'commits'],
       recentRepositories: [],
       favoriteBranches: {},
       fileListHeight: 160,

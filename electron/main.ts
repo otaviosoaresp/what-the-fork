@@ -3,8 +3,14 @@ import path from 'path'
 import { registerGitHandlers } from './git/ipc-handlers'
 import { registerAIHandlers } from './ai/ipc-handlers'
 import { registerReviewHandlers } from './ai/review-ipc'
+import { registerGitHubHandlers } from './github'
 
 let mainWindow: BrowserWindow | null = null
+
+function getIconPath(): string {
+  const iconName = process.platform === 'win32' ? 'icon.ico' : 'icon.png'
+  return path.join(__dirname, '../../build', iconName)
+}
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -12,12 +18,13 @@ function createWindow(): void {
     height: 900,
     minWidth: 800,
     minHeight: 600,
+    icon: getIconPath(),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false
     },
-    titleBarStyle: 'hiddenInset',
+    titleBarStyle: process.platform === 'darwin' ? 'hiddenInset' : 'default',
     backgroundColor: '#0f172a'
   })
 
@@ -37,6 +44,7 @@ app.whenReady().then(() => {
   registerGitHandlers()
   registerAIHandlers()
   registerReviewHandlers()
+  registerGitHubHandlers()
   createWindow()
 })
 
