@@ -1,5 +1,6 @@
 export * from './branch'
 export * from './commit'
 export * from './diff'
+export * from './file-content'
 export * from './remote'
 export * from './status'

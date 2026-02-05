@@ -126,6 +126,9 @@ export interface ElectronAPI {
       unstaged: (repoPath: string) => Promise<DiffFile[]>
       file: (repoPath: string, filePath: string, staged: boolean) => Promise<DiffFile[]>
     }
+    file: {
+      content: (repoPath: string, ref: string, filePath: string) => Promise<string[]>
+    }
     fetch: (repoPath: string) => Promise<void>
     pull: (repoPath: string) => Promise<void>
     push: (repoPath: string) => Promise<void>

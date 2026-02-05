@@ -26,6 +26,9 @@ contextBridge.exposeInMainWorld('electron', {
       unstaged: (repoPath: string) => ipcRenderer.invoke('git:diff:unstaged', repoPath),
       file: (repoPath: string, filePath: string, staged: boolean) => ipcRenderer.invoke('git:diff:file', repoPath, filePath, staged)
     },
+    file: {
+      content: (repoPath: string, ref: string, filePath: string) => ipcRenderer.invoke('git:file:content', repoPath, ref, filePath)
+    },
     fetch: (repoPath: string) => ipcRenderer.invoke('git:fetch', repoPath),
     pull: (repoPath: string) => ipcRenderer.invoke('git:pull', repoPath),
     push: (repoPath: string) => ipcRenderer.invoke('git:push', repoPath),
