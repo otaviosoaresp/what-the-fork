@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "What the Fork - Git desktop client for diff visualization",
   "author": "Otavio Soares <tavinq@hotmail.com>",
+  "engines": { "node": ">=22" },
   "main": "dist-electron/electron/main.js",
   "scripts": {
     "dev": "vite",
