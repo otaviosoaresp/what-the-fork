@@ -13,6 +13,7 @@ const PR_FIELDS = [
   'baseRefName',
   'reviewDecision',
   'reviews',
+  'reviewRequests',
   'statusCheckRollup',
   'labels',
   'milestone',
@@ -22,12 +23,12 @@ const PR_FIELDS = [
 ].join(',')
 
 export async function listPullRequests(options: {
-  repo: string
+  repoPath: string
   type: 'created' | 'review-requested' | 'all'
 }): Promise<PullRequest[]> {
-  const { repo, type } = options
+  const { repoPath, type } = options
 
-  const args = ['pr', 'list', '--repo', repo, '--limit', '100']
+  const args = ['pr', 'list', '--limit', '100']
 
   if (type === 'created') {
     args.push('--author', '@me')
@@ -39,6 +40,7 @@ export async function listPullRequests(options: {
 
   return new Promise((resolve, reject) => {
     const proc = spawn('gh', args, {
+      cwd: repoPath,
       stdio: ['ignore', 'pipe', 'pipe']
     })
 
@@ -71,15 +73,16 @@ export async function listPullRequests(options: {
 }
 
 export async function getPullRequestForBranch(options: {
-  repo: string
+  repoPath: string
   branch: string
 }): Promise<PullRequest | null> {
-  const { repo, branch } = options
+  const { repoPath, branch } = options
 
-  const args = ['pr', 'list', '--repo', repo, '--head', branch, '--json', PR_FIELDS]
+  const args = ['pr', 'list', '--head', branch, '--json', PR_FIELDS]
 
   return new Promise((resolve) => {
     const proc = spawn('gh', args, {
+      cwd: repoPath,
       stdio: ['ignore', 'pipe', 'pipe']
     })
 
@@ -117,6 +120,15 @@ function parsePullRequest(data: Record<string, unknown>): PullRequest {
   const approved = reviews.filter(r => r.state === 'APPROVED').length
   const changesRequested = reviews.filter(r => r.state === 'CHANGES_REQUESTED').length
 
+  const reviewRequests = (data.reviewRequests as Array<{
+    login?: string
+    name?: string
+    requestedReviewer?: { login?: string; name?: string }
+  }>) || []
+  const pending = reviewRequests
+    .map(r => r.login || r.name || r.requestedReviewer?.login || r.requestedReviewer?.name || '')
+    .filter(Boolean)
+
   const statusCheck = data.statusCheckRollup as Array<{ state: string }> | null
   let checksStatus: PullRequest['checksStatus'] = null
   if (statusCheck && statusCheck.length > 0) {
@@ -150,7 +162,7 @@ function parsePullRequest(data: Record<string, unknown>): PullRequest {
     reviewStatus: {
       approved,
       changesRequested,
-      pending: []
+      pending
     },
     checksStatus,
     labels: labels.map(l => l.name),

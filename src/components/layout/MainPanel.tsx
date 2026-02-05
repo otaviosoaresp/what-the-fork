@@ -13,21 +13,26 @@ import { PRCommentsPanel } from '@/components/diff/PRCommentsPanel'
 export function MainPanel() {
   const { files, selectedFile, isLoading, error, baseBranch, compareBranch, mode, selectFile } = useDiffStore()
   const { diffViewMode } = useUIStore()
-  const { branchPrMap, loadPRComments, clearPRComments } = useGitHubStore()
+  const { isAvailable, loadPRComments, clearPRComments } = useGitHubStore()
   const { repoPath } = useRepositoryStore()
 
   useEffect(() => {
-    if (mode === 'branches' && compareBranch) {
-      const pr = branchPrMap[compareBranch]
-      if (pr && repoPath) {
-        loadPRComments(repoPath, pr.number)
-      } else {
-        clearPRComments()
-      }
+    if (mode === 'branches' && compareBranch && repoPath && isAvailable) {
+      window.electron.github.pr.forBranch({ repoPath, branch: compareBranch })
+        .then(pr => {
+          if (pr) {
+            loadPRComments(repoPath, pr.number)
+          } else {
+            clearPRComments()
+          }
+        })
+        .catch(() => {
+          clearPRComments()
+        })
     } else {
       clearPRComments()
     }
-  }, [mode, compareBranch, branchPrMap, repoPath, loadPRComments, clearPRComments])
+  }, [mode, compareBranch, repoPath, isAvailable, loadPRComments, clearPRComments])
 
   const handleCommentClick = (path: string, _line: number) => {
     const file = files.find(f => {

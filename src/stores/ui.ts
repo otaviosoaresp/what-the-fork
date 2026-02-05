@@ -26,7 +26,7 @@ export const useUIStore = create<UIState>()(
   persist(
     (set, get) => ({
       diffViewMode: 'split',
-      sidebarWidth: 280,
+      sidebarWidth: 320,
       expandedSections: ['branches', 'pull-requests', 'staging', 'commits'],
       recentRepositories: [],
       favoriteBranches: {},

@@ -29,11 +29,11 @@ export const useBranchesStore = create<BranchesState>((set, get) => ({
       set({ branches, isLoading: false })
 
       const githubStore = useGitHubStore.getState()
-      const { repoName } = useRepositoryStore.getState()
+      const { repoPath: currentRepoPath } = useRepositoryStore.getState()
 
-      if (githubStore.isAvailable && githubStore.selectedAccount && repoName) {
+      if (githubStore.isAvailable && githubStore.selectedAccount && currentRepoPath) {
         const branchNames = branches.map(b => b.name)
-        githubStore.loadBranchPrMap(repoName, branchNames)
+        githubStore.loadBranchPrMap(currentRepoPath, branchNames)
       }
     } catch (error) {
       set({

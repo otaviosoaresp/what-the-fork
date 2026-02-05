@@ -12,15 +12,21 @@ const ISSUE_FIELDS = [
 ].join(',')
 
 export async function getIssue(options: {
-  repo: string
+  repoPath: string
   number: number
+  repo?: string
 }): Promise<Issue | null> {
-  const { repo, number } = options
+  const { repoPath, number, repo } = options
 
-  const args = ['issue', 'view', String(number), '--repo', repo, '--json', ISSUE_FIELDS]
+  const args = ['issue', 'view', String(number), '--json', ISSUE_FIELDS]
+
+  if (repo) {
+    args.push('--repo', repo)
+  }
 
   return new Promise((resolve) => {
     const proc = spawn('gh', args, {
+      cwd: repoPath,
       stdio: ['ignore', 'pipe', 'pipe']
     })
 

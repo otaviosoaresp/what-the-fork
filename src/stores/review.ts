@@ -4,6 +4,7 @@ import type { ReviewComment, ReviewHistoryEntry } from '@/types/electron'
 interface ReviewContext {
   type: 'issue' | 'manual'
   issue?: { number: number; title: string; body: string }
+  issueRepo?: string
   text?: string
 }
 
