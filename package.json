@@ -3,14 +3,23 @@
   "version": "0.1.0",
   "description": "What the Fork - Git desktop client for diff visualization",
   "author": "Otavio Soares <tavinq@hotmail.com>",
-  "engines": { "node": ">=22" },
+  "homepage": "https://github.com/otaviosoaresp/what-the-fork",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/otaviosoaresp/what-the-fork.git"
+  },
+  "engines": {
+    "node": ">=22"
+  },
   "main": "dist-electron/electron/main.js",
   "scripts": {
     "dev": "vite",
     "dev:electron": "node scripts/electron-dev.js",
     "build:electron": "tsc -p tsconfig.node.json",
     "build": "tsc && vite build && npm run build:electron && electron-builder",
-    "preview": "vite preview"
+    "build:appimage": "tsc && vite build && npm run build:electron && electron-builder --linux AppImage",
+    "preview": "vite preview",
+    "test": "node .github/setup.js"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
