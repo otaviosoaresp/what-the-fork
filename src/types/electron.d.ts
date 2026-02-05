@@ -83,6 +83,18 @@ interface Issue {
   url: string
 }
 
+interface PRComment {
+  id: number
+  path: string
+  line: number | null
+  originalLine: number | null
+  side: 'LEFT' | 'RIGHT'
+  body: string
+  author: string
+  createdAt: string
+  inReplyToId: number | null
+}
+
 export interface AIConfig {
   apiKey?: string
   model?: string
@@ -148,11 +160,12 @@ export interface ElectronAPI {
       setForRepo: (repoKey: string, username: string) => Promise<void>
     }
     pr: {
-      list: (options: { repo: string; type: 'created' | 'review-requested' | 'all' }) => Promise<PullRequest[]>
-      forBranch: (options: { repo: string; branch: string }) => Promise<PullRequest | null>
+      list: (options: { repoPath: string; type: 'created' | 'review-requested' | 'all' }) => Promise<PullRequest[]>
+      forBranch: (options: { repoPath: string; branch: string }) => Promise<PullRequest | null>
+      comments: (options: { repoPath: string; prNumber: number }) => Promise<PRComment[]>
     }
     issue: {
-      get: (options: { repo: string; number: number }) => Promise<Issue | null>
+      get: (options: { repoPath: string; number: number; repo?: string }) => Promise<Issue | null>
     }
     openUrl: (url: string) => Promise<void>
   }

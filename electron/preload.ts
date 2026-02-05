@@ -60,13 +60,15 @@ contextBridge.exposeInMainWorld('electron', {
       setForRepo: (repoKey: string, username: string) => ipcRenderer.invoke('github:accounts:set-for-repo', repoKey, username)
     },
     pr: {
-      list: (options: { repo: string; type: 'created' | 'review-requested' | 'all' }) =>
+      list: (options: { repoPath: string; type: 'created' | 'review-requested' | 'all' }) =>
         ipcRenderer.invoke('github:pr:list', options),
-      forBranch: (options: { repo: string; branch: string }) =>
-        ipcRenderer.invoke('github:pr:for-branch', options)
+      forBranch: (options: { repoPath: string; branch: string }) =>
+        ipcRenderer.invoke('github:pr:for-branch', options),
+      comments: (options: { repoPath: string; prNumber: number }) =>
+        ipcRenderer.invoke('github:pr:comments', options)
     },
     issue: {
-      get: (options: { repo: string; number: number }) =>
+      get: (options: { repoPath: string; number: number; repo?: string }) =>
         ipcRenderer.invoke('github:issue:get', options)
     },
     openUrl: (url: string) => ipcRenderer.invoke('github:open-url', url)

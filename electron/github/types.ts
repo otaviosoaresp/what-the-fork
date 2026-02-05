@@ -42,3 +42,15 @@ export interface ReviewContext {
   issueContent?: Issue
   manualContext?: string
 }
+
+export interface PRComment {
+  id: number
+  path: string
+  line: number | null
+  originalLine: number | null
+  side: 'LEFT' | 'RIGHT'
+  body: string
+  author: string
+  createdAt: string
+  inReplyToId: number | null
+}
