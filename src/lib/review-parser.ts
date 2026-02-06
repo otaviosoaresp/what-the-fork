@@ -85,9 +85,7 @@ export function parseStructuredReview(content: string): StructuredReview {
     if (jsonMatch) {
       cleaned = jsonMatch[0]
     }
-    console.log('[parseStructuredReview] Cleaned content:', cleaned.substring(0, 500))
     const parsed = JSON.parse(cleaned)
-    console.log('[parseStructuredReview] Parsed JSON:', parsed)
 
     if (typeof parsed.summary !== 'string') {
       throw new Error('Invalid summary')
@@ -96,7 +94,6 @@ export function parseStructuredReview(content: string): StructuredReview {
     const comments: ReviewComment[] = []
     if (Array.isArray(parsed.comments)) {
       for (const c of parsed.comments) {
-        console.log('[parseStructuredReview] Processing comment:', c)
         if (
           typeof c.file === 'string' &&
           typeof c.line === 'number' &&
@@ -108,13 +105,6 @@ export function parseStructuredReview(content: string): StructuredReview {
             line: c.line,
             type: c.type,
             content: c.content
-          })
-        } else {
-          console.log('[parseStructuredReview] Invalid comment:', {
-            fileOk: typeof c.file === 'string',
-            lineOk: typeof c.line === 'number',
-            typeOk: VALID_COMMENT_TYPES.includes(c.type),
-            contentOk: typeof c.content === 'string'
           })
         }
       }
@@ -129,11 +119,8 @@ export function parseStructuredReview(content: string): StructuredReview {
       }
     }
 
-    console.log('[parseStructuredReview] Final result:', { summary: parsed.summary.substring(0, 100), commentsCount: comments.length, generalNotesCount: generalNotes.length })
     return { summary: parsed.summary, comments, generalNotes }
-  } catch (err) {
-    console.error('[parseStructuredReview] Parse error:', err)
-    console.log('[parseStructuredReview] Raw content:', content.substring(0, 500))
+  } catch {
     return {
       summary: content,
       comments: [],

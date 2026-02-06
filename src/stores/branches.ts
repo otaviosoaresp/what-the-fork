@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import type { Branch } from '../../electron/git/types'
 import { useRepositoryStore } from './repository'
+import { useGitHubStore } from './github'
 
 interface BranchesState {
   branches: Branch[]
@@ -26,6 +27,14 @@ export const useBranchesStore = create<BranchesState>((set, get) => ({
     try {
       const branches = await window.electron.git.branches.list(repoPath)
       set({ branches, isLoading: false })
+
+      const githubStore = useGitHubStore.getState()
+      const { repoPath: currentRepoPath } = useRepositoryStore.getState()
+
+      if (githubStore.isAvailable && githubStore.selectedAccount && currentRepoPath) {
+        const branchNames = branches.map(b => b.name)
+        githubStore.loadBranchPrMap(currentRepoPath, branchNames)
+      }
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : 'Failed to load branches',

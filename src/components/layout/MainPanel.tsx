@@ -1,5 +1,8 @@
+import { useEffect } from 'react'
 import { useDiffStore } from '@/stores/diff'
 import { useUIStore } from '@/stores/ui'
+import { useGitHubStore } from '@/stores/github'
+import { useRepositoryStore } from '@/stores/repository'
 import { DiffView } from '@/components/diff/DiffView'
 import { DiffHeader } from '@/components/diff/DiffHeader'
 import { FileList } from '@/components/diff/FileList'
@@ -9,6 +12,26 @@ import { ReviewPanel } from '@/components/review/ReviewPanel'
 export function MainPanel() {
   const { files, selectedFile, isLoading, error, baseBranch, compareBranch, mode } = useDiffStore()
   const { diffViewMode } = useUIStore()
+  const { isAvailable, loadPRComments, clearPRComments } = useGitHubStore()
+  const { repoPath } = useRepositoryStore()
+
+  useEffect(() => {
+    if (mode === 'branches' && compareBranch && repoPath && isAvailable) {
+      window.electron.github.pr.forBranch({ repoPath, branch: compareBranch })
+        .then(pr => {
+          if (pr) {
+            loadPRComments(repoPath, pr.number)
+          } else {
+            clearPRComments()
+          }
+        })
+        .catch(() => {
+          clearPRComments()
+        })
+    } else {
+      clearPRComments()
+    }
+  }, [mode, compareBranch, repoPath, isAvailable, loadPRComments, clearPRComments])
 
   if (isLoading) {
     return (

@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import { GitPullRequest } from 'lucide-react'
 import { useBranchesStore } from '@/stores/branches'
 import { useDiffStore } from '@/stores/diff'
 import { useRepositoryStore } from '@/stores/repository'
 import { useToastStore } from '@/stores/toast'
+import { useGitHubStore } from '@/stores/github'
 import { cn } from '@/lib/utils'
 import type { Branch } from '../../../electron/git/types'
 
@@ -20,6 +22,8 @@ export function BranchItem({ branch, isBase, isFavorite, onSetBase, onToggleFavo
   const { currentBranch } = useRepositoryStore()
   const addToast = useToastStore((s) => s.addToast)
   const [showActions, setShowActions] = useState(false)
+  const { branchPrMap } = useGitHubStore()
+  const pr = branchPrMap[branch.name]
 
   const isCurrent = branch.name === currentBranch
 
@@ -95,7 +99,22 @@ export function BranchItem({ branch, isBase, isFavorite, onSetBase, onToggleFavo
           <path d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3" />
         </svg>
       )}
-      <span className={cn('truncate flex-1', branch.gone && 'text-muted-foreground line-through')}>{branch.name}</span>
+      <span className={cn('truncate flex-1', branch.gone && 'text-muted-foreground line-through')}>
+        {branch.name}
+        {pr && (
+          <span
+            className={`ml-1 ${
+              pr.isDraft ? 'text-zinc-500' :
+              pr.state === 'open' ? 'text-green-500' :
+              pr.state === 'merged' ? 'text-purple-500' :
+              'text-zinc-500'
+            }`}
+            title={`PR #${pr.number}: ${pr.title}`}
+          >
+            <GitPullRequest className="w-3 h-3 inline" />
+          </span>
+        )}
+      </span>
       {branch.gone && (
         <span className="text-[10px] px-1.5 py-0.5 bg-destructive/10 text-destructive rounded flex-shrink-0" title="Remote branch was deleted">
           gone

@@ -1,6 +1,13 @@
 import { create } from 'zustand'
 import type { ReviewComment, ReviewHistoryEntry } from '@/types/electron'
 
+interface ReviewContext {
+  type: 'issue' | 'manual'
+  issue?: { number: number; title: string; body: string }
+  issueRepo?: string
+  text?: string
+}
+
 interface ReviewState {
   isOpen: boolean
   isLoading: boolean
@@ -13,6 +20,7 @@ interface ReviewState {
   history: ReviewHistoryEntry[]
   selectedHistoryEntry: ReviewHistoryEntry | null
   historyDiffChanged: boolean
+  reviewContext: ReviewContext | null
 
   openPanel: () => void
   closePanel: () => void
@@ -25,6 +33,8 @@ interface ReviewState {
   setActiveTab: (tab: 'review' | 'history') => void
   setHistory: (history: ReviewHistoryEntry[]) => void
   selectHistoryEntry: (entry: ReviewHistoryEntry | null, diffChanged: boolean) => void
+  setReviewContext: (context: ReviewContext | null) => void
+  clearReviewContext: () => void
 }
 
 export const useReviewStore = create<ReviewState>((set, get) => ({
@@ -39,6 +49,7 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
   history: [],
   selectedHistoryEntry: null,
   historyDiffChanged: false,
+  reviewContext: null,
 
   openPanel: () => set({ isOpen: true }),
   closePanel: () => set({ isOpen: false }),
@@ -80,7 +91,8 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
     activeTab: 'review',
     history: [],
     selectedHistoryEntry: null,
-    historyDiffChanged: false
+    historyDiffChanged: false,
+    reviewContext: null
   }),
 
   setActiveTab: (activeTab: 'review' | 'history') => set({ activeTab }),
@@ -95,5 +107,8 @@ export const useReviewStore = create<ReviewState>((set, get) => ({
     generalNotes: entry?.generalNotes ?? [],
     provider: entry?.provider ?? null,
     activeTab: 'review'
-  })
+  }),
+
+  setReviewContext: (context) => set({ reviewContext: context }),
+  clearReviewContext: () => set({ reviewContext: null })
 }))

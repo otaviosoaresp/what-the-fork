@@ -45,6 +45,59 @@ export interface ReviewHistoryEntry {
   generalNotes: string[]
 }
 
+interface GitHubAccount {
+  username: string
+  isActive: boolean
+}
+
+interface PullRequest {
+  number: number
+  title: string
+  author: string
+  state: 'open' | 'closed' | 'merged'
+  isDraft: boolean
+  createdAt: string
+  updatedAt: string
+  headBranch: string
+  baseBranch: string
+  reviewStatus: {
+    approved: number
+    changesRequested: number
+    pending: string[]
+  }
+  checksStatus: 'success' | 'failure' | 'pending' | 'neutral' | null
+  labels: string[]
+  milestone: string | null
+  commentsCount: number
+  mergeable: boolean | null
+  url: string
+}
+
+interface Issue {
+  number: number
+  title: string
+  body: string
+  state: 'open' | 'closed'
+  author: string
+  labels: string[]
+  url: string
+}
+
+interface PRComment {
+  id: number
+  path: string
+  line: number | null
+  originalLine: number | null
+  side: 'LEFT' | 'RIGHT'
+  body: string
+  author: string
+  createdAt: string
+  inReplyToId: number | null
+  isResolved: boolean
+  isOutdated: boolean
+  threadId: string | null
+}
+
 export interface AIConfig {
   apiKey?: string
   model?: string
@@ -76,6 +129,9 @@ export interface ElectronAPI {
       unstaged: (repoPath: string) => Promise<DiffFile[]>
       file: (repoPath: string, filePath: string, staged: boolean) => Promise<DiffFile[]>
     }
+    file: {
+      content: (repoPath: string, ref: string, filePath: string) => Promise<string[]>
+    }
     fetch: (repoPath: string) => Promise<void>
     pull: (repoPath: string) => Promise<void>
     push: (repoPath: string) => Promise<void>
@@ -94,12 +150,30 @@ export interface ElectronAPI {
     getRepoConfig: (repoPath: string) => Promise<RepoReviewConfig>
     setRepoConfig: (repoPath: string, config: { reviewPrompt?: string; baseBranch?: string }) => Promise<void>
     getAvailableProviders: () => Promise<string[]>
-    reviewBranch: (repoPath: string, baseBranch: string, compareBranch: string, skipCache?: boolean) => Promise<ReviewResponse>
+    reviewBranch: (repoPath: string, baseBranch: string, compareBranch: string, skipCache?: boolean, taskContext?: { type: 'issue' | 'manual'; issue?: { number: number; title: string; body: string }; text?: string } | null) => Promise<ReviewResponse>
     ask: (repoPath: string, code: string, question: string) => Promise<ReviewResponse>
     cancel: () => Promise<void>
     resetRepoPrompt: (repoPath: string) => Promise<void>
     getHistory: (repoPath: string) => Promise<ReviewHistoryEntry[]>
     deleteHistoryEntry: (repoPath: string, timestamp: number) => Promise<void>
+  }
+  github: {
+    isAvailable: () => Promise<boolean>
+    accounts: {
+      list: () => Promise<GitHubAccount[]>
+      switch: (username: string) => Promise<void>
+      getForRepo: (repoKey: string) => Promise<string | null>
+      setForRepo: (repoKey: string, username: string) => Promise<void>
+    }
+    pr: {
+      list: (options: { repoPath: string; type: 'created' | 'review-requested' | 'all' }) => Promise<PullRequest[]>
+      forBranch: (options: { repoPath: string; branch: string }) => Promise<PullRequest | null>
+      comments: (options: { repoPath: string; prNumber: number }) => Promise<PRComment[]>
+    }
+    issue: {
+      get: (options: { repoPath: string; number: number; repo?: string }) => Promise<Issue | null>
+    }
+    openUrl: (url: string) => Promise<void>
   }
 }
 

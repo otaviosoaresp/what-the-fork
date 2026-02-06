@@ -26,6 +26,9 @@ contextBridge.exposeInMainWorld('electron', {
       unstaged: (repoPath: string) => ipcRenderer.invoke('git:diff:unstaged', repoPath),
       file: (repoPath: string, filePath: string, staged: boolean) => ipcRenderer.invoke('git:diff:file', repoPath, filePath, staged)
     },
+    file: {
+      content: (repoPath: string, ref: string, filePath: string) => ipcRenderer.invoke('git:file:content', repoPath, ref, filePath)
+    },
     fetch: (repoPath: string) => ipcRenderer.invoke('git:fetch', repoPath),
     pull: (repoPath: string) => ipcRenderer.invoke('git:pull', repoPath),
     push: (repoPath: string) => ipcRenderer.invoke('git:push', repoPath),
@@ -44,11 +47,33 @@ contextBridge.exposeInMainWorld('electron', {
     getRepoConfig: (repoPath: string) => ipcRenderer.invoke('review:get-repo-config', repoPath),
     setRepoConfig: (repoPath: string, config: { reviewPrompt?: string; baseBranch?: string }) => ipcRenderer.invoke('review:set-repo-config', repoPath, config),
     getAvailableProviders: () => ipcRenderer.invoke('review:get-available-providers'),
-    reviewBranch: (repoPath: string, baseBranch: string, compareBranch: string, skipCache?: boolean) => ipcRenderer.invoke('review:branch', repoPath, baseBranch, compareBranch, skipCache),
+    reviewBranch: (repoPath: string, baseBranch: string, compareBranch: string, skipCache?: boolean, taskContext?: { type: 'issue' | 'manual'; issue?: { number: number; title: string; body: string }; text?: string } | null) => ipcRenderer.invoke('review:branch', repoPath, baseBranch, compareBranch, skipCache, taskContext),
     ask: (repoPath: string, code: string, question: string) => ipcRenderer.invoke('review:ask', repoPath, code, question),
     cancel: () => ipcRenderer.invoke('review:cancel'),
     resetRepoPrompt: (repoPath: string) => ipcRenderer.invoke('review:reset-repo-prompt', repoPath),
     getHistory: (repoPath: string) => ipcRenderer.invoke('review:get-history', repoPath),
     deleteHistoryEntry: (repoPath: string, timestamp: number) => ipcRenderer.invoke('review:delete-history-entry', repoPath, timestamp)
+  },
+  github: {
+    isAvailable: () => ipcRenderer.invoke('github:is-available'),
+    accounts: {
+      list: () => ipcRenderer.invoke('github:accounts:list'),
+      switch: (username: string) => ipcRenderer.invoke('github:accounts:switch', username),
+      getForRepo: (repoKey: string) => ipcRenderer.invoke('github:accounts:get-for-repo', repoKey),
+      setForRepo: (repoKey: string, username: string) => ipcRenderer.invoke('github:accounts:set-for-repo', repoKey, username)
+    },
+    pr: {
+      list: (options: { repoPath: string; type: 'created' | 'review-requested' | 'all' }) =>
+        ipcRenderer.invoke('github:pr:list', options),
+      forBranch: (options: { repoPath: string; branch: string }) =>
+        ipcRenderer.invoke('github:pr:for-branch', options),
+      comments: (options: { repoPath: string; prNumber: number }) =>
+        ipcRenderer.invoke('github:pr:comments', options)
+    },
+    issue: {
+      get: (options: { repoPath: string; number: number; repo?: string }) =>
+        ipcRenderer.invoke('github:issue:get', options)
+    },
+    openUrl: (url: string) => ipcRenderer.invoke('github:open-url', url)
   }
 })
