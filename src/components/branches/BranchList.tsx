@@ -26,7 +26,7 @@ export function BranchList() {
 
   useEffect(() => {
     loadBranches()
-  }, [loadBranches])
+  }, [repoPath, loadBranches])
 
   useEffect(() => {
     setLocalVisibleCount(PAGE_SIZE)

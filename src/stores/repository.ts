@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 import type { FileStatus, RemoteStatus } from '../../electron/git/types'
 import { useGitHubStore } from './github'
+import { useDiffStore } from './diff'
+import { useReviewStore } from './review'
 
 interface RepositoryState {
   repoPath: string | null
@@ -39,6 +41,10 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
       if (!isRepo) {
         throw new Error('Not a git repository')
       }
+
+      useDiffStore.getState().clearDiff()
+      useGitHubStore.getState().clearState()
+      useReviewStore.getState().clear()
 
       const currentBranch = await window.electron.git.branches.current(path)
       const status = await window.electron.git.status(path)
@@ -80,6 +86,10 @@ export const useRepositoryStore = create<RepositoryState>((set, get) => ({
   },
 
   closeRepository: () => {
+    useDiffStore.getState().clearDiff()
+    useGitHubStore.getState().clearState()
+    useReviewStore.getState().clear()
+
     set({
       repoPath: null,
       repoName: null,
