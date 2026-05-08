@@ -41,6 +41,53 @@ npm run dev
 npm run build
 ```
 
+### Quick Run (Linux, AppImage)
+
+Helper scripts build, launch and update a portable AppImage without touching
+the system package manager.
+
+```bash
+./update.sh             # git pull + npm ci (if needed) + rebuild AppImage
+./update.sh --skip-pull # rebuild only, skip git pull (e.g. with local edits)
+./run.sh                # launch the latest AppImage (builds it if missing)
+./install-desktop.sh    # register app in the system menu with icon (run once)
+```
+
+What each script does:
+
+- **`update.sh`** — refuses to run if the working tree is dirty (use
+  `--skip-pull` to bypass), pulls `origin`, runs `npm ci` only when
+  `package-lock.json` changed, then runs `npm run build:appimage`. Removes
+  stale AppImages and refreshes the stable symlink
+  `release/what-the-fork.AppImage` to point at the new build.
+- **`run.sh`** — locates the AppImage (preferring the symlink), makes it
+  executable and launches it. Falls back to `--appimage-extract-and-run` if
+  the host is missing `libfuse2`.
+- **`install-desktop.sh`** — copies the icon to
+  `~/.local/share/icons/hicolor/512x512/apps/` and writes a `.desktop` entry
+  to `~/.local/share/applications/`, so the app shows up in the system
+  launcher. The entry points at the stable symlink, so you only run this
+  once — future `./update.sh` runs keep working without re-registering.
+
+Typical flow on a fresh clone:
+
+```bash
+nvm use
+npm install
+./update.sh --skip-pull   # first build
+./install-desktop.sh      # optional: add to system menu
+```
+
+After that, `./update.sh` keeps the local AppImage in sync with the latest
+commits on the current branch.
+
+To uninstall the menu entry:
+
+```bash
+rm ~/.local/share/applications/what-the-fork.desktop
+rm ~/.local/share/icons/hicolor/512x512/apps/what-the-fork.png
+```
+
 ## Tech Stack
 
 | Layer | Technology |

@@ -15,6 +15,7 @@
     "dev:electron": "node scripts/electron-dev.js",
     "build:electron": "tsc -p tsconfig.node.json",
     "build": "tsc && vite build && npm run build:electron && electron-builder",
+    "build:appimage": "tsc && vite build && npm run build:electron && electron-builder --linux AppImage",
     "preview": "vite preview"
   },
   "dependencies": {
